@@ -1,48 +1,67 @@
-# autopilot
+# Pico VM
 
-A GitHub repo that builds itself, one hour at a time.
+A tiny **stack-based virtual machine** written in plain JavaScript (ESM, zero
+dependencies). Think of it as a minimal bytecode interpreter you can program
+directly — or eventually compile a tiny language into.
 
-Every hour, a GitHub Action wakes up, hands the current state of this repo to
-Claude, and asks: *given everything past-you has done, what's the next single
-increment?* Claude reads the journal and the code, makes one focused change,
-writes down what it did and what should come next, and commits.
+## Quick start
 
-No instance of the model remembers the last one. Continuity is faked — well —
-entirely through what's written into the repo: `PROGRESS.md` for the plan and
-`journal/` for the running log. It's a relay race where every runner reads the
-baton's notes and adds a leg.
+js
+import { VM, Op } from "./src/vm.mjs";
 
-## How it works
+const vm = new VM();
 
-- **`.github/workflows/autopilot.yml`** — the heartbeat. Cron fires `0 * * * *`.
-- **`scripts/agent.mjs`** — one tick. Gathers context, calls the API, applies
-  the file changes the model asks for, writes a journal entry, stages a commit.
-- **`scripts/run-tests.mjs`** — a tiny dependency-free runner. Any `*.test.mjs`
-  file gets executed; it throws on failure. No tests yet = pass.
-- **`PROGRESS.md`** — the living plan. First thing read each tick.
-- **`journal/`** — append-only log, one timestamped entry per tick.
+// Compute (2 + 3) * 4
+const stack = vm.run([
+  [Op.PUSH, 2],
+  [Op.PUSH, 3],
+  Op.ADD,
+  [Op.PUSH, 4],
+  Op.MUL,
+  Op.HALT,
+]);
 
-## Setup
+console.log(stack); // [20]
 
-1. Push this repo to GitHub.
-2. Add a repo secret named `ANTHROPIC_API_KEY` (Settings → Secrets and
-   variables → Actions → New repository secret).
-3. Make sure Actions can write: Settings → Actions → General → Workflow
-   permissions → **Read and write permissions**.
-4. Fire the first run manually from the Actions tab (`workflow_dispatch`) to
-   check it works, then let the hourly cron take over.
 
-## Guardrails
+## Opcodes
 
-- The agent can't edit its own workflow or runner (`agent.mjs` blocks those
-  paths and refuses anything with `..` or absolute paths).
-- One run at a time (`concurrency`), 15-minute timeout per tick.
-- On error it commits a breadcrumb instead of crashing, so the next tick can
-  recover.
+| Opcode | Description |
+|--------|-------------|
+| `PUSH value` | Push a literal number onto the stack |
+| `POP` | Discard the top of stack |
+| `DUP` | Duplicate the top of stack |
+| `SWAP` | Swap the top two elements |
+| `ADD` | Pop two values, push their sum |
+| `SUB` | Pop two values, push `left - right` |
+| `MUL` | Pop two values, push their product |
+| `DIV` | Pop two values, push `left / right` (throws on division by zero) |
+| `MOD` | Pop two values, push `left % right` (throws on modulo by zero) |
+| `NEG` | Negate the top of stack |
+| `HALT` | Stop execution |
 
-## Watching it
+## Running tests
 
-Read `PROGRESS.md` for where things stand, or scroll the commit history to
-watch the thing think out loud over time. It costs one API call and a few
-Action minutes per hour, so glance at it now and then — an unwatched loop is
-how you get 200 commits of nonsense or a surprise bill.
+bash
+node scripts/run-tests.mjs
+
+
+## Project structure
+
+
+src/
+  vm.mjs          — core VM implementation
+tests/
+  vm.test.mjs     — tests for arithmetic and stack ops
+scripts/
+  run-tests.mjs   — test runner (auto-discovers *.test.mjs)
+
+
+## Roadmap
+
+- [x] Core VM: arithmetic ops, stack ops
+- [ ] Comparison ops, logical ops, jump instructions
+- [ ] Variable store (STORE / LOAD)
+- [ ] Function calls (CALL / RET)
+- [ ] Text assembler for `.pico` source files
+- [ ] Standard library examples

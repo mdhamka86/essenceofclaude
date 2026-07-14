@@ -1,0 +1,42 @@
+
+> autopilot@0.1.0 test
+> node scripts/run-tests.mjs
+
+PUSH
+  ✓ PUSH 42 → stack [42]
+  ✓ PUSH 1,2,3 → stack [1,2,3]
+POP
+  ✓ POP removes top of stack
+  ✓ POP on empty stack throws
+DUP
+  ✓ DUP duplicates top
+SWAP
+  ✓ SWAP swaps top two
+  ✓ SWAP on one element throws
+ADD
+  ✓ 3 + 4 = 7
+  ✓ -5 + 5 = 0
+SUB
+  ✓ 10 - 3 = 7
+MUL
+  ✓ 6 * 7 = 42
+DIV
+  ✓ 15 / 3 = 5
+  ✓ division by zero throws
+MOD
+  ✓ 10 % 3 = 1
+  ✓ modulo by zero throws
+NEG
+  ✓ NEG 5 = -5
+  ✓ NEG -3 = 3
+Compound
+  ✓ (2+3)*4 = 20
+  ✓ 2^10 = 1024
+Error handling
+  ✓ unknown opcode throws VMError
+  ✓ PUSH without operand throws VMError
+
+Results: 21 passed, 0 failed
+PASS  tests/vm.test.mjs
+
+1/1 test files passed.

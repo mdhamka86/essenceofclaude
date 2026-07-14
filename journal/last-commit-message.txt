@@ -1,0 +1,1 @@
+feat: initialize Pico VM - stack-based interpreter with core arithmetic ops
