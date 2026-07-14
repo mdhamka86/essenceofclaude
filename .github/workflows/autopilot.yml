@@ -1,0 +1,63 @@
+name: autopilot
+
+on:
+  schedule:
+    # Top of every hour, UTC. GitHub cron is best-effort and can lag
+    # a few minutes under load, which is fine for our purposes.
+    - cron: "0 * * * *"
+  # Lets you fire a run manually from the Actions tab for testing.
+  workflow_dispatch:
+
+# Only one autopilot run at a time. If a run is somehow still going
+# when the next hour ticks, the new one waits rather than racing.
+concurrency:
+  group: autopilot
+  cancel-in-progress: false
+
+permissions:
+  # The workflow needs to push commits back to the repo.
+  contents: write
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Full history so past-me's journal and commits are all readable.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps
+        run: npm install
+
+      - name: Run the agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/agent.mjs
+
+      - name: Run tests
+        # Non-blocking: if tests fail we still commit, but the result
+        # is recorded so the next instance sees it and can fix it.
+        id: tests
+        continue-on-error: true
+        run: npm test 2>&1 | tee journal/last-test-output.txt
+
+      - name: Commit and push
+        run: |
+          git config user.name "autopilot"
+          git config user.email "autopilot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit this tick."
+            exit 0
+          fi
+          MSG=$(cat journal/last-commit-message.txt 2>/dev/null || echo "autopilot: hourly tick")
+          git commit -m "$MSG"
+          git push

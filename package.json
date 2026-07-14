@@ -1,0 +1,10 @@
+{
+  "name": "autopilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A repo that builds itself, one hour at a time.",
+  "scripts": {
+    "test": "node scripts/run-tests.mjs"
+  }
+}
