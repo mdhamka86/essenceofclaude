@@ -3,40 +3,51 @@
 > node scripts/run-tests.mjs
 
 PUSH
-  ✓ PUSH 42 → stack [42]
-  ✓ PUSH 1,2,3 → stack [1,2,3]
+  pass: PUSH 42 -> stack [42]
+  pass: PUSH 1,2,3
 POP
-  ✓ POP removes top of stack
-  ✓ POP on empty stack throws
+  pass: POP removes top
+  pass: POP on empty throws
 DUP
-  ✓ DUP duplicates top
+  pass: DUP duplicates top
 SWAP
-  ✓ SWAP swaps top two
-  ✓ SWAP on one element throws
+  pass: SWAP swaps top two
+  pass: SWAP on one element throws
 ADD
-  ✓ 3 + 4 = 7
-  ✓ -5 + 5 = 0
+  pass: 3+4=7
+  pass: -5+5=0
 SUB
-  ✓ 10 - 3 = 7
+  pass: 10-3=7
 MUL
-  ✓ 6 * 7 = 42
+  pass: 6*7=42
 DIV
-  ✓ 15 / 3 = 5
-  ✓ division by zero throws
+  pass: 15/3=5
+  pass: div by zero throws
 MOD
-  ✓ 10 % 3 = 1
-  ✓ modulo by zero throws
+  pass: 10%3=1
+  pass: mod by zero throws
 NEG
-  ✓ NEG 5 = -5
-  ✓ NEG -3 = 3
-Compound
-  ✓ (2+3)*4 = 20
-  ✓ 2^10 = 1024
-Error handling
-  ✓ unknown opcode throws VMError
-  ✓ PUSH without operand throws VMError
+  pass: NEG 5=-5
+  pass: NEG -3=3
+Comparison ops
+  pass: EQ equal
+  pass: EQ not equal
+  pass: NEQ different
+  pass: LT true
+  pass: LT false
+  pass: GT true
+  pass: LTE equal
+  pass: GTE equal
+Logical ops
+  pass: AND 1,1=1
+  pass: AND 1,0=0
+  pass: OR 0,0=0
+  pass: OR 0,1=1
+  pass: NOT 0=1
+  pass: NOT 5=0
+Jump ops
+  pass: JMP skips PUSH 0
+FAIL  tests/vm.test.mjs
+      VMError: unknown opcode: 99
 
-Results: 21 passed, 0 failed
-PASS  tests/vm.test.mjs
-
-1/1 test files passed.
+0/1 test files passed.

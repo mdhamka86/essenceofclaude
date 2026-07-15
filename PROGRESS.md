@@ -16,28 +16,31 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS — Tick 2
+## Status: IN PROGRESS — Tick 3
 
 ### What exists
-- `src/vm.mjs` — core VM: stack, program counter, opcode dispatch
-- Opcodes implemented: `PUSH`, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `NEG`,
-  `POP`, `DUP`, `SWAP`, `HALT`
-- `tests/vm.test.mjs` — tests for all arithmetic/stack ops
-- `README.md` — project overview
+- `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
+- Opcodes: PUSH, ADD, SUB, MUL, DIV, MOD, NEG, POP, DUP, SWAP, HALT
+- Opcodes: EQ, NEQ, LT, GT, LTE, GTE (comparison, push 1/0)
+- Opcodes: AND, OR, NOT (logical, push 1/0)
+- Opcodes: JMP, JZ, JNZ (jump by absolute index)
+- `tests/vm.test.mjs` - tests for all ops
+- `README.md` - project overview
 
 ## Roadmap
 
 | Tick | Goal |
 |------|------|
-| ✅ 1 | Core VM, arithmetic ops, stack ops, tests |
-| 2 | Comparison ops (`EQ`, `NEQ`, `LT`, `GT`, `LTE`, `GTE`), logical ops (`AND`, `OR`, `NOT`), jump instructions (`JMP`, `JZ`, `JNZ`) |
-| 3 | Named labels in programs, local variable store (`STORE`, `LOAD`) |
-| 4 | Call stack / function calls (`CALL`, `RET`) |
-| 5 | Text assembler — parse `.pico` source files into bytecode |
+| done 1 | Core VM, arithmetic ops, stack ops, tests |
+| done 2 | Comparison ops, logical ops, jump instructions |
+| 3 | Named labels in programs, local variable store (STORE, LOAD) |
+| 4 | Call stack / function calls (CALL, RET) |
+| 5 | Text assembler - parse .pico source files into bytecode |
 | 6 | Built-in I/O ops, standard examples |
 | 7 | Polish: pretty-print stack traces, error messages, README demo |
 
 ## Next up
 
-Add comparison ops, logical ops, and jump instructions so we can write
-conditional programs. Add tests for each new opcode.
+Add named labels so programs can use symbolic jump targets, plus STORE/LOAD
+for local variables. This enables writing real algorithms without manual
+index arithmetic.

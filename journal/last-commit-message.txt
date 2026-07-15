@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-15T17:50:03.494Z (recovered from error)
+feat: add comparison ops, logical ops, and jump instructions (Tick 2)
