@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 4
+## Status: IN PROGRESS - Tick 5
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -25,6 +25,7 @@ directly or eventually compile a tiny language to.
 - Opcodes: AND, OR, NOT (logical, push 1/0)
 - Opcodes: JMP, JZ, JNZ (jump by absolute index)
 - Opcodes: STORE, LOAD (named local variable store)
+- Opcodes: CALL, RET (function calls with call stack, local scopes)
 - `tests/vm.test.mjs` - tests for all ops
 - `README.md` - project overview
 
@@ -35,11 +36,16 @@ directly or eventually compile a tiny language to.
 | done 1 | Core VM, arithmetic ops, stack ops, tests |
 | done 2 | Comparison ops, logical ops, jump instructions |
 | done 3 | STORE/LOAD variable ops, fix JZ/JNZ |
-| 4 | Call stack / function calls (CALL, RET) |
+| done 4 | Call stack / function calls (CALL, RET) |
 | 5 | Text assembler - parse .pico source files into bytecode |
 | 6 | Built-in I/O ops, standard examples |
 | 7 | Polish: pretty-print stack traces, error messages, README demo |
 
 ## Next up
 
-Add CALL/RET opcodes for function calls with a call stack.
+Implement text assembler in `src/assembler.mjs` that parses `.pico` assembly
+source into a program array. Support mnemonics, labels, and string operands.
+
+## Recent journal entries
+### Tick 2026-07-16T16:57:38Z
+Did: Implemented Tick 4 - CALL and RET opcodes. CALL saves return address + vars to call stack then jumps. RET restores. Tests cover basic call, nested calls. Next: text assembler.

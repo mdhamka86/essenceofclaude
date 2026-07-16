@@ -1,1 +1,1 @@
-fix: add missing JZ/JNZ opcodes and add STORE/LOAD variable ops (Tick 3)
+feat: add CALL/RET opcodes for function calls with call stack (Tick 4)

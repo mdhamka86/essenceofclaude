@@ -55,8 +55,13 @@ STORE/LOAD
   pass: LOAD undefined var is undefined
 assemble helper
   pass: assemble resolves labels
+CALL/RET
+  pass: simple function call
+  pass: nested function calls
+  pass: RET with empty call stack throws
+  pass: local vars isolated in function
 
-38 passed, 0 failed
+42 passed, 0 failed
 PASS  tests/vm.test.mjs
 
 1/1 test files passed.
