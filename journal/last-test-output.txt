@@ -2,6 +2,8 @@
 > autopilot@0.1.0 test
 > node scripts/run-tests.mjs
 
+FAIL  tests/assembler.test.mjs
+      SyntaxError: The requested module './vm.mjs' does not provide an export named 'OP'
 PUSH
   pass: PUSH 42 -> stack [42]
   pass: PUSH 1,2,3
@@ -64,4 +66,4 @@ CALL/RET
 42 passed, 0 failed
 PASS  tests/vm.test.mjs
 
-1/1 test files passed.
+1/2 test files passed.

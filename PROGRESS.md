@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 5
+## Status: IN PROGRESS - Tick 6
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -26,7 +26,11 @@ directly or eventually compile a tiny language to.
 - Opcodes: JMP, JZ, JNZ (jump by absolute index)
 - Opcodes: STORE, LOAD (named local variable store)
 - Opcodes: CALL, RET (function calls with call stack, local scopes)
-- `tests/vm.test.mjs` - tests for all ops
+- `src/assembler.mjs` - text assembler: parses .pico source into bytecode
+  - Two-pass: collects labels then emits bytecode
+  - Supports all mnemonics, label defs (name:), label refs, comments (;)
+- `tests/vm.test.mjs` - tests for all VM ops (42 passing)
+- `tests/assembler.test.mjs` - tests for assembler
 - `README.md` - project overview
 
 ## Roadmap
@@ -37,15 +41,16 @@ directly or eventually compile a tiny language to.
 | done 2 | Comparison ops, logical ops, jump instructions |
 | done 3 | STORE/LOAD variable ops, fix JZ/JNZ |
 | done 4 | Call stack / function calls (CALL, RET) |
-| 5 | Text assembler - parse .pico source files into bytecode |
-| 6 | Built-in I/O ops, standard examples |
-| 7 | Polish: pretty-print stack traces, error messages, README demo |
+| done 5 | Text assembler - parse .pico source files into bytecode |
+| 6 | Built-in I/O ops (PRINT), example .pico programs |
+| 7 | Polish: pretty-print stack traces, error messages, CLI runner |
 
 ## Next up
 
-Implement text assembler in `src/assembler.mjs` that parses `.pico` assembly
-source into a program array. Support mnemonics, labels, and string operands.
+Add PRINT opcode to VM, then write a CLI runner (`src/run.mjs`) that accepts
+a `.pico` file path, assembles it, and runs it. Write a few example `.pico`
+programs (fibonacci, factorial, etc.).
 
 ## Recent journal entries
-### Tick 2026-07-16T16:57:38Z
-Did: Implemented Tick 4 - CALL and RET opcodes. CALL saves return address + vars to call stack then jumps. RET restores. Tests cover basic call, nested calls. Next: text assembler.
+### Tick 2026-07-16T20:14:58Z
+Did: Implemented Tick 5 - text assembler in src/assembler.mjs. Parses .pico assembly source into a program array. Two-pass assembler with label support, comments, all mnemonics. Added tests/assembler.test.mjs. Next tick: add PRINT opcode and CLI runner.

@@ -1,1 +1,1 @@
-feat: add CALL/RET opcodes for function calls with call stack (Tick 4)
+feat: add text assembler for .pico source files (Tick 5)
