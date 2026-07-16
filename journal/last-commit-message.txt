@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-16T06:37:51.623Z (recovered from error)
+fix: add missing JZ/JNZ opcodes and add STORE/LOAD variable ops (Tick 3)

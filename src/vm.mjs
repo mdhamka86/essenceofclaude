@@ -1,92 +1,124 @@
 // Pico VM - stack-based bytecode interpreter
-// Opcodes are plain strings for readability.
 
-export class VMError extends Error {
-  constructor(msg) { super(msg); this.name = 'VMError'; }
-}
+export class VMError extends Error {}
 
-export function createVM() {
-  return { stack: [], pc: 0, halted: false };
-}
+export const Op = {
+  PUSH:  0,
+  POP:   1,
+  DUP:   2,
+  SWAP:  3,
+  ADD:   4,
+  SUB:   5,
+  MUL:   6,
+  DIV:   7,
+  MOD:   8,
+  NEG:   9,
+  HALT:  10,
+  EQ:    11,
+  NEQ:   12,
+  LT:    13,
+  GT:    14,
+  LTE:   15,
+  GTE:   16,
+  AND:   17,
+  OR:    18,
+  NOT:   19,
+  JMP:   20,
+  JZ:    21,
+  JNZ:   22,
+  STORE: 23,
+  LOAD:  24,
+};
 
-function pop(vm) {
-  if (vm.stack.length === 0) throw new VMError('stack underflow');
-  return vm.stack.pop();
-}
+export class VM {
+  constructor(program) {
+    this.program = program;
+    this.stack = [];
+    this.vars = {};
+    this.pc = 0;
+  }
 
-function peek(vm) {
-  if (vm.stack.length === 0) throw new VMError('stack underflow');
-  return vm.stack[vm.stack.length - 1];
-}
+  push(v) { this.stack.push(v); }
 
-export function run(vm, program) {
-  vm.pc = 0;
-  vm.halted = false;
-  while (!vm.halted && vm.pc < program.length) {
-    const op = program[vm.pc];
-    switch (op) {
-      case 'PUSH': {
-        if (vm.pc + 1 >= program.length) throw new VMError('PUSH missing operand');
-        vm.stack.push(program[++vm.pc]);
-        vm.pc++;
-        break;
+  pop() {
+    if (this.stack.length === 0) throw new VMError('stack underflow');
+    return this.stack.pop();
+  }
+
+  peek() {
+    if (this.stack.length === 0) throw new VMError('stack underflow');
+    return this.stack[this.stack.length - 1];
+  }
+
+  run() {
+    while (this.pc < this.program.length) {
+      const op = this.program[this.pc++];
+      switch (op) {
+        case Op.PUSH:
+          this.push(this.program[this.pc++]);
+          break;
+        case Op.POP:
+          this.pop();
+          break;
+        case Op.DUP:
+          this.push(this.peek());
+          break;
+        case Op.SWAP: {
+          const a = this.pop();
+          const b = this.pop();
+          this.push(a);
+          this.push(b);
+          break;
+        }
+        case Op.ADD: { const b=this.pop(),a=this.pop(); this.push(a+b); break; }
+        case Op.SUB: { const b=this.pop(),a=this.pop(); this.push(a-b); break; }
+        case Op.MUL: { const b=this.pop(),a=this.pop(); this.push(a*b); break; }
+        case Op.DIV: {
+          const b=this.pop(),a=this.pop();
+          if (b===0) throw new VMError('division by zero');
+          this.push(a/b);
+          break;
+        }
+        case Op.MOD: {
+          const b=this.pop(),a=this.pop();
+          if (b===0) throw new VMError('mod by zero');
+          this.push(a%b);
+          break;
+        }
+        case Op.NEG: this.push(-this.pop()); break;
+        case Op.HALT: return;
+        case Op.EQ:  { const b=this.pop(),a=this.pop(); this.push(a===b?1:0); break; }
+        case Op.NEQ: { const b=this.pop(),a=this.pop(); this.push(a!==b?1:0); break; }
+        case Op.LT:  { const b=this.pop(),a=this.pop(); this.push(a<b?1:0); break; }
+        case Op.GT:  { const b=this.pop(),a=this.pop(); this.push(a>b?1:0); break; }
+        case Op.LTE: { const b=this.pop(),a=this.pop(); this.push(a<=b?1:0); break; }
+        case Op.GTE: { const b=this.pop(),a=this.pop(); this.push(a>=b?1:0); break; }
+        case Op.AND: { const b=this.pop(),a=this.pop(); this.push((a&&b)?1:0); break; }
+        case Op.OR:  { const b=this.pop(),a=this.pop(); this.push((a||b)?1:0); break; }
+        case Op.NOT: this.push(this.pop()===0?1:0); break;
+        case Op.JMP: this.pc = this.program[this.pc]; break;
+        case Op.JZ:  { const t=this.program[this.pc++]; if(this.pop()===0) this.pc=t; break; }
+        case Op.JNZ: { const t=this.program[this.pc++]; if(this.pop()!==0) this.pc=t; break; }
+        case Op.STORE: { const n=this.program[this.pc++]; this.vars[n]=this.pop(); break; }
+        case Op.LOAD:  { const n=this.program[this.pc++]; this.push(this.vars[n]); break; }
+        default:
+          throw new VMError('unknown opcode: ' + op);
       }
-      case 'POP': { pop(vm); vm.pc++; break; }
-      case 'DUP': { vm.stack.push(peek(vm)); vm.pc++; break; }
-      case 'SWAP': {
-        if (vm.stack.length < 2) throw new VMError('SWAP needs 2 values');
-        const a = pop(vm), b = pop(vm);
-        vm.stack.push(a); vm.stack.push(b);
-        vm.pc++; break;
-      }
-      case 'ADD': { const r = pop(vm); vm.stack.push(pop(vm) + r); vm.pc++; break; }
-      case 'SUB': { const r = pop(vm); vm.stack.push(pop(vm) - r); vm.pc++; break; }
-      case 'MUL': { const r = pop(vm); vm.stack.push(pop(vm) * r); vm.pc++; break; }
-      case 'DIV': {
-        const r = pop(vm);
-        if (r === 0) throw new VMError('division by zero');
-        vm.stack.push(pop(vm) / r); vm.pc++; break;
-      }
-      case 'MOD': {
-        const r = pop(vm);
-        if (r === 0) throw new VMError('modulo by zero');
-        vm.stack.push(pop(vm) % r); vm.pc++; break;
-      }
-      case 'NEG': { vm.stack.push(-pop(vm)); vm.pc++; break; }
-      // Comparison ops - push 1 (true) or 0 (false)
-      case 'EQ':  { const r = pop(vm); vm.stack.push(pop(vm) === r ? 1 : 0); vm.pc++; break; }
-      case 'NEQ': { const r = pop(vm); vm.stack.push(pop(vm) !== r ? 1 : 0); vm.pc++; break; }
-      case 'LT':  { const r = pop(vm); vm.stack.push(pop(vm) <   r ? 1 : 0); vm.pc++; break; }
-      case 'GT':  { const r = pop(vm); vm.stack.push(pop(vm) >   r ? 1 : 0); vm.pc++; break; }
-      case 'LTE': { const r = pop(vm); vm.stack.push(pop(vm) <=  r ? 1 : 0); vm.pc++; break; }
-      case 'GTE': { const r = pop(vm); vm.stack.push(pop(vm) >=  r ? 1 : 0); vm.pc++; break; }
-      // Logical ops - treat 0 as false, non-zero as true; push 1 or 0
-      case 'AND': { const b = pop(vm), a = pop(vm); vm.stack.push((a !== 0 && b !== 0) ? 1 : 0); vm.pc++; break; }
-      case 'OR':  { const b = pop(vm), a = pop(vm); vm.stack.push((a !== 0 || b !== 0) ? 1 : 0); vm.pc++; break; }
-      case 'NOT': { vm.stack.push(pop(vm) === 0 ? 1 : 0); vm.pc++; break; }
-      // Jump instructions - operand is absolute program index
-      case 'JMP': {
-        if (vm.pc + 1 >= program.length) throw new VMError('JMP missing operand');
-        vm.pc = program[vm.pc + 1];
-        break;
-      }
-      case 'JZ': {
-        if (vm.pc + 1 >= program.length) throw new VMError('JZ missing operand');
-        const target = program[vm.pc + 1];
-        const cond = pop(vm);
-        vm.pc = (cond === 0) ? target : vm.pc + 2;
-        break;
-      }
-      case 'JNZ': {
-        if (vm.pc + 1 >= program.length) throw new VMError('JNZ missing operand');
-        const target = program[vm.pc + 1];
-        const cond = pop(vm);
-        vm.pc = (cond !== 0) ? target : vm.pc + 2;
-        break;
-      }
-      case 'HALT': { vm.halted = true; break; }
-      default: throw new VMError('unknown opcode: ' + op);
     }
   }
-  return vm.stack[vm.stack.length - 1];
+}
+
+// Helper: resolve label names in a program array
+// Labels are strings like 'loop:' which become index markers
+export function assemble(source) {
+  const labels = {};
+  const pass1 = [];
+  for (const token of source) {
+    if (typeof token === 'string' && token.endsWith(':')) {
+      labels[token.slice(0, -1)] = pass1.length;
+    } else {
+      pass1.push(token);
+    }
+  }
+  return pass1.map(t => (typeof t === 'string' && labels[t] !== undefined) ? labels[t] : t);
 }

@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS — Tick 3
+## Status: IN PROGRESS - Tick 4
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -24,6 +24,7 @@ directly or eventually compile a tiny language to.
 - Opcodes: EQ, NEQ, LT, GT, LTE, GTE (comparison, push 1/0)
 - Opcodes: AND, OR, NOT (logical, push 1/0)
 - Opcodes: JMP, JZ, JNZ (jump by absolute index)
+- Opcodes: STORE, LOAD (named local variable store)
 - `tests/vm.test.mjs` - tests for all ops
 - `README.md` - project overview
 
@@ -33,7 +34,7 @@ directly or eventually compile a tiny language to.
 |------|------|
 | done 1 | Core VM, arithmetic ops, stack ops, tests |
 | done 2 | Comparison ops, logical ops, jump instructions |
-| 3 | Named labels in programs, local variable store (STORE, LOAD) |
+| done 3 | STORE/LOAD variable ops, fix JZ/JNZ |
 | 4 | Call stack / function calls (CALL, RET) |
 | 5 | Text assembler - parse .pico source files into bytecode |
 | 6 | Built-in I/O ops, standard examples |
@@ -41,6 +42,4 @@ directly or eventually compile a tiny language to.
 
 ## Next up
 
-Add named labels so programs can use symbolic jump targets, plus STORE/LOAD
-for local variables. This enables writing real algorithms without manual
-index arithmetic.
+Add CALL/RET opcodes for function calls with a call stack.

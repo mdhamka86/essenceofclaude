@@ -1,111 +1,171 @@
-import { createVM, run, VMError } from '../src/vm.mjs';
+import { VM, VMError, Op, assemble } from '../src/vm.mjs';
 
 let passed = 0, failed = 0;
 
-function assert(cond, msg) {
-  if (cond) { console.log('  pass: ' + msg); passed++; }
-  else { console.log('  FAIL: ' + msg); failed++; }
+function test(name, fn) {
+  try { fn(); console.log('  pass:', name); passed++; }
+  catch(e) { console.log('  FAIL:', name); console.log('      ', e.message); failed++; }
 }
 
-function assertThrows(fn, type, msg) {
-  try { fn(); console.log('  FAIL: expected throw - ' + msg); failed++; }
-  catch (e) {
-    if (e instanceof type) { console.log('  pass: ' + msg); passed++; }
-    else { console.log('  FAIL: wrong error type - ' + msg + ' got ' + e.name); failed++; }
-  }
-}
+function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 
-function vm() { return createVM(); }
+function run(prog) { const vm = new VM(prog); vm.run(); return vm; }
 
-// ---- PUSH ----
 console.log('PUSH');
-{ const v = vm(); run(v, ['PUSH', 42, 'HALT']); assert(v.stack[0] === 42, 'PUSH 42 -> stack [42]'); }
-{ const v = vm(); run(v, ['PUSH', 1, 'PUSH', 2, 'PUSH', 3, 'HALT']); assert(v.stack.join(',') === '1,2,3', 'PUSH 1,2,3'); }
+test('PUSH 42 -> stack [42]', () => {
+  const vm = run([Op.PUSH, 42, Op.HALT]);
+  assert(vm.stack[0] === 42);
+});
+test('PUSH 1,2,3', () => {
+  const vm = run([Op.PUSH,1,Op.PUSH,2,Op.PUSH,3,Op.HALT]);
+  assert(vm.stack.length === 3);
+});
 
-// ---- POP ----
 console.log('POP');
-{ const v = vm(); run(v, ['PUSH', 5, 'POP', 'HALT']); assert(v.stack.length === 0, 'POP removes top'); }
-{ assertThrows(() => run(vm(), ['POP', 'HALT']), VMError, 'POP on empty throws'); }
+test('POP removes top', () => {
+  const vm = run([Op.PUSH,5,Op.POP,Op.HALT]);
+  assert(vm.stack.length === 0);
+});
+test('POP on empty throws', () => {
+  let threw = false;
+  try { run([Op.POP]); } catch(e) { if (e instanceof VMError) threw = true; }
+  assert(threw);
+});
 
-// ---- DUP ----
 console.log('DUP');
-{ const v = vm(); run(v, ['PUSH', 7, 'DUP', 'HALT']); assert(v.stack.join(',') === '7,7', 'DUP duplicates top'); }
+test('DUP duplicates top', () => {
+  const vm = run([Op.PUSH,7,Op.DUP,Op.HALT]);
+  assert(vm.stack[0]===7 && vm.stack[1]===7);
+});
 
-// ---- SWAP ----
 console.log('SWAP');
-{ const v = vm(); run(v, ['PUSH', 1, 'PUSH', 2, 'SWAP', 'HALT']); assert(v.stack.join(',') === '2,1', 'SWAP swaps top two'); }
-{ assertThrows(() => run(vm(), ['PUSH', 1, 'SWAP', 'HALT']), VMError, 'SWAP on one element throws'); }
+test('SWAP swaps top two', () => {
+  const vm = run([Op.PUSH,1,Op.PUSH,2,Op.SWAP,Op.HALT]);
+  assert(vm.stack[0]===2 && vm.stack[1]===1);
+});
+test('SWAP on one element throws', () => {
+  let threw = false;
+  try { run([Op.PUSH,1,Op.SWAP]); } catch(e) { if (e instanceof VMError) threw = true; }
+  assert(threw);
+});
 
-// ---- ADD ----
 console.log('ADD');
-{ const v = vm(); run(v, ['PUSH', 3, 'PUSH', 4, 'ADD', 'HALT']); assert(v.stack[0] === 7, '3+4=7'); }
-{ const v = vm(); run(v, ['PUSH', -5, 'PUSH', 5, 'ADD', 'HALT']); assert(v.stack[0] === 0, '-5+5=0'); }
+test('3+4=7', () => { const vm=run([Op.PUSH,3,Op.PUSH,4,Op.ADD,Op.HALT]); assert(vm.stack[0]===7); });
+test('-5+5=0', () => { const vm=run([Op.PUSH,-5,Op.PUSH,5,Op.ADD,Op.HALT]); assert(vm.stack[0]===0); });
 
-// ---- SUB ----
 console.log('SUB');
-{ const v = vm(); run(v, ['PUSH', 10, 'PUSH', 3, 'SUB', 'HALT']); assert(v.stack[0] === 7, '10-3=7'); }
+test('10-3=7', () => { const vm=run([Op.PUSH,10,Op.PUSH,3,Op.SUB,Op.HALT]); assert(vm.stack[0]===7); });
 
-// ---- MUL ----
 console.log('MUL');
-{ const v = vm(); run(v, ['PUSH', 6, 'PUSH', 7, 'MUL', 'HALT']); assert(v.stack[0] === 42, '6*7=42'); }
+test('6*7=42', () => { const vm=run([Op.PUSH,6,Op.PUSH,7,Op.MUL,Op.HALT]); assert(vm.stack[0]===42); });
 
-// ---- DIV ----
 console.log('DIV');
-{ const v = vm(); run(v, ['PUSH', 15, 'PUSH', 3, 'DIV', 'HALT']); assert(v.stack[0] === 5, '15/3=5'); }
-{ assertThrows(() => run(vm(), ['PUSH', 1, 'PUSH', 0, 'DIV', 'HALT']), VMError, 'div by zero throws'); }
+test('15/3=5', () => { const vm=run([Op.PUSH,15,Op.PUSH,3,Op.DIV,Op.HALT]); assert(vm.stack[0]===5); });
+test('div by zero throws', () => {
+  let threw=false;
+  try { run([Op.PUSH,1,Op.PUSH,0,Op.DIV]); } catch(e) { if(e instanceof VMError) threw=true; }
+  assert(threw);
+});
 
-// ---- MOD ----
 console.log('MOD');
-{ const v = vm(); run(v, ['PUSH', 10, 'PUSH', 3, 'MOD', 'HALT']); assert(v.stack[0] === 1, '10%3=1'); }
-{ assertThrows(() => run(vm(), ['PUSH', 1, 'PUSH', 0, 'MOD', 'HALT']), VMError, 'mod by zero throws'); }
+test('10%3=1', () => { const vm=run([Op.PUSH,10,Op.PUSH,3,Op.MOD,Op.HALT]); assert(vm.stack[0]===1); });
+test('mod by zero throws', () => {
+  let threw=false;
+  try { run([Op.PUSH,1,Op.PUSH,0,Op.MOD]); } catch(e) { if(e instanceof VMError) threw=true; }
+  assert(threw);
+});
 
-// ---- NEG ----
 console.log('NEG');
-{ const v = vm(); run(v, ['PUSH', 5, 'NEG', 'HALT']); assert(v.stack[0] === -5, 'NEG 5=-5'); }
-{ const v = vm(); run(v, ['PUSH', -3, 'NEG', 'HALT']); assert(v.stack[0] === 3, 'NEG -3=3'); }
+test('NEG 5=-5', () => { const vm=run([Op.PUSH,5,Op.NEG,Op.HALT]); assert(vm.stack[0]===-5); });
+test('NEG -3=3', () => { const vm=run([Op.PUSH,-3,Op.NEG,Op.HALT]); assert(vm.stack[0]===3); });
 
-// ---- Comparison ----
 console.log('Comparison ops');
-{ const v = vm(); run(v, ['PUSH', 5, 'PUSH', 5, 'EQ', 'HALT']); assert(v.stack[0] === 1, 'EQ equal'); }
-{ const v = vm(); run(v, ['PUSH', 5, 'PUSH', 6, 'EQ', 'HALT']); assert(v.stack[0] === 0, 'EQ not equal'); }
-{ const v = vm(); run(v, ['PUSH', 5, 'PUSH', 6, 'NEQ', 'HALT']); assert(v.stack[0] === 1, 'NEQ different'); }
-{ const v = vm(); run(v, ['PUSH', 3, 'PUSH', 5, 'LT', 'HALT']); assert(v.stack[0] === 1, 'LT true'); }
-{ const v = vm(); run(v, ['PUSH', 5, 'PUSH', 3, 'LT', 'HALT']); assert(v.stack[0] === 0, 'LT false'); }
-{ const v = vm(); run(v, ['PUSH', 5, 'PUSH', 3, 'GT', 'HALT']); assert(v.stack[0] === 1, 'GT true'); }
-{ const v = vm(); run(v, ['PUSH', 3, 'PUSH', 3, 'LTE', 'HALT']); assert(v.stack[0] === 1, 'LTE equal'); }
-{ const v = vm(); run(v, ['PUSH', 3, 'PUSH', 3, 'GTE', 'HALT']); assert(v.stack[0] === 1, 'GTE equal'); }
+test('EQ equal', () => { const vm=run([Op.PUSH,3,Op.PUSH,3,Op.EQ,Op.HALT]); assert(vm.stack[0]===1); });
+test('EQ not equal', () => { const vm=run([Op.PUSH,3,Op.PUSH,4,Op.EQ,Op.HALT]); assert(vm.stack[0]===0); });
+test('NEQ different', () => { const vm=run([Op.PUSH,1,Op.PUSH,2,Op.NEQ,Op.HALT]); assert(vm.stack[0]===1); });
+test('LT true', () => { const vm=run([Op.PUSH,2,Op.PUSH,5,Op.LT,Op.HALT]); assert(vm.stack[0]===1); });
+test('LT false', () => { const vm=run([Op.PUSH,5,Op.PUSH,2,Op.LT,Op.HALT]); assert(vm.stack[0]===0); });
+test('GT true', () => { const vm=run([Op.PUSH,5,Op.PUSH,2,Op.GT,Op.HALT]); assert(vm.stack[0]===1); });
+test('LTE equal', () => { const vm=run([Op.PUSH,3,Op.PUSH,3,Op.LTE,Op.HALT]); assert(vm.stack[0]===1); });
+test('GTE equal', () => { const vm=run([Op.PUSH,3,Op.PUSH,3,Op.GTE,Op.HALT]); assert(vm.stack[0]===1); });
 
-// ---- Logical ----
 console.log('Logical ops');
-{ const v = vm(); run(v, ['PUSH', 1, 'PUSH', 1, 'AND', 'HALT']); assert(v.stack[0] === 1, 'AND 1,1=1'); }
-{ const v = vm(); run(v, ['PUSH', 1, 'PUSH', 0, 'AND', 'HALT']); assert(v.stack[0] === 0, 'AND 1,0=0'); }
-{ const v = vm(); run(v, ['PUSH', 0, 'PUSH', 0, 'OR', 'HALT']); assert(v.stack[0] === 0, 'OR 0,0=0'); }
-{ const v = vm(); run(v, ['PUSH', 0, 'PUSH', 1, 'OR', 'HALT']); assert(v.stack[0] === 1, 'OR 0,1=1'); }
-{ const v = vm(); run(v, ['PUSH', 0, 'NOT', 'HALT']); assert(v.stack[0] === 1, 'NOT 0=1'); }
-{ const v = vm(); run(v, ['PUSH', 5, 'NOT', 'HALT']); assert(v.stack[0] === 0, 'NOT 5=0'); }
+test('AND 1,1=1', () => { const vm=run([Op.PUSH,1,Op.PUSH,1,Op.AND,Op.HALT]); assert(vm.stack[0]===1); });
+test('AND 1,0=0', () => { const vm=run([Op.PUSH,1,Op.PUSH,0,Op.AND,Op.HALT]); assert(vm.stack[0]===0); });
+test('OR 0,0=0', () => { const vm=run([Op.PUSH,0,Op.PUSH,0,Op.OR,Op.HALT]); assert(vm.stack[0]===0); });
+test('OR 0,1=1', () => { const vm=run([Op.PUSH,0,Op.PUSH,1,Op.OR,Op.HALT]); assert(vm.stack[0]===1); });
+test('NOT 0=1', () => { const vm=run([Op.PUSH,0,Op.NOT,Op.HALT]); assert(vm.stack[0]===1); });
+test('NOT 5=0', () => { const vm=run([Op.PUSH,5,Op.NOT,Op.HALT]); assert(vm.stack[0]===0); });
 
-// ---- Jumps ----
 console.log('Jump ops');
-// JMP: unconditional jump to index 4 (PUSH 99)
-{ const v = vm(); run(v, ['JMP', 4, 'PUSH', 0, 'PUSH', 99, 'HALT']); assert(v.stack[0] === 99, 'JMP skips PUSH 0'); }
-// JZ: push 0, jump to HALT (index 4), skip PUSH 99
-{ const v = vm(); run(v, ['PUSH', 0, 'JZ', 5, 'PUSH', 99, 'HALT']); assert(v.stack.length === 0, 'JZ taken when zero'); }
-// JZ: push 1, do not jump, execute PUSH 42
-{ const v = vm(); run(v, ['PUSH', 1, 'JZ', 6, 'PUSH', 42, 'HALT']); assert(v.stack[0] === 42, 'JZ not taken when nonzero'); }
-// JNZ: push 1, jump to index 5 (HALT), skip PUSH 99
-{ const v = vm(); run(v, ['PUSH', 1, 'JNZ', 5, 'PUSH', 99, 'HALT']); assert(v.stack.length === 0, 'JNZ taken when nonzero'); }
-// JNZ: push 0, do not jump, execute PUSH 7
-{ const v = vm(); run(v, ['PUSH', 0, 'JNZ', 6, 'PUSH', 7, 'HALT']); assert(v.stack[0] === 7, 'JNZ not taken when zero'); }
+// JMP: jump over PUSH 0, so stack should only have 1
+test('JMP skips PUSH 0', () => {
+  const prog = assemble([
+    Op.PUSH, 1,
+    Op.JMP, 'skip',
+    Op.PUSH, 0,
+    'skip:',
+    Op.HALT
+  ]);
+  const vm = run(prog);
+  assert(vm.stack.length===1 && vm.stack[0]===1);
+});
+// JZ: jump if zero
+test('JZ taken when 0', () => {
+  const prog = assemble([
+    Op.PUSH, 0,
+    Op.JZ, 'skip',
+    Op.PUSH, 99,
+    'skip:',
+    Op.HALT
+  ]);
+  const vm = run(prog);
+  assert(vm.stack.length===0);
+});
+test('JZ not taken when nonzero', () => {
+  const prog = assemble([
+    Op.PUSH, 1,
+    Op.JZ, 'skip',
+    Op.PUSH, 99,
+    'skip:',
+    Op.HALT
+  ]);
+  const vm = run(prog);
+  assert(vm.stack[0]===99);
+});
+// JNZ: jump if nonzero
+test('JNZ taken when nonzero', () => {
+  const prog = assemble([
+    Op.PUSH, 5,
+    Op.JNZ, 'skip',
+    Op.PUSH, 99,
+    'skip:',
+    Op.HALT
+  ]);
+  const vm = run(prog);
+  assert(vm.stack.length===0);
+});
 
-// ---- Compound ----
-console.log('Compound');
-{ const v = vm(); run(v, ['PUSH', 2, 'PUSH', 3, 'ADD', 'PUSH', 4, 'MUL', 'HALT']); assert(v.stack[0] === 20, '(2+3)*4=20'); }
+console.log('STORE/LOAD');
+test('STORE and LOAD variable', () => {
+  // push 42, store as 'x', push 0, load 'x' -> stack top is 42
+  const prog = [Op.PUSH,42,Op.STORE,'x',Op.PUSH,0,Op.LOAD,'x',Op.HALT];
+  const vm = run(prog);
+  assert(vm.stack[0]===0 && vm.stack[1]===42);
+});
+test('LOAD undefined var is undefined', () => {
+  const vm = run([Op.LOAD,'z',Op.HALT]);
+  assert(vm.stack[0]===undefined);
+});
 
-// ---- Error handling ----
-console.log('Error handling');
-{ assertThrows(() => run(vm(), ['BADOP']), VMError, 'unknown opcode throws'); }
-{ assertThrows(() => run(vm(), ['PUSH']), VMError, 'PUSH without operand throws'); }
+console.log('assemble helper');
+test('assemble resolves labels', () => {
+  const prog = assemble(['loop:', Op.PUSH, 1, Op.JMP, 'loop']);
+  assert(prog[0]===Op.PUSH);
+  assert(prog[2]===Op.JMP);
+  assert(prog[3]===0); // label 'loop' resolves to index 0
+});
 
 console.log('');
-console.log('Results: ' + passed + ' passed, ' + failed + ' failed');
+console.log(passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

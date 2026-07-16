@@ -47,7 +47,16 @@ Logical ops
   pass: NOT 5=0
 Jump ops
   pass: JMP skips PUSH 0
-FAIL  tests/vm.test.mjs
-      VMError: unknown opcode: 99
+  pass: JZ taken when 0
+  pass: JZ not taken when nonzero
+  pass: JNZ taken when nonzero
+STORE/LOAD
+  pass: STORE and LOAD variable
+  pass: LOAD undefined var is undefined
+assemble helper
+  pass: assemble resolves labels
 
-0/1 test files passed.
+38 passed, 0 failed
+PASS  tests/vm.test.mjs
+
+1/1 test files passed.
