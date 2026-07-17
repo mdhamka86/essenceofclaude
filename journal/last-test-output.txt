@@ -4,19 +4,23 @@
 
 Assembler
   pass: PUSH and HALT
-  pass: arithmetic
+  FAIL: arithmetic
+    expected 7, got undefined
   pass: comments stripped
-  pass: label definition and JMP
-  pass: JZ taken
-  pass: JZ not taken
-  pass: STORE and LOAD
-  pass: CALL and RET
-  pass: factorial via loop (assembler)
-  pass: PRINT opcode
+  FAIL: label definition and JMP
+    expected 99, got undefined
+  FAIL: JZ taken
+    expected 2, got undefined
+  FAIL: JZ not taken
+    expected 1, got undefined
+  FAIL: STORE and LOAD
+    expected 10, got undefined
+  FAIL: CALL and RET
+    expected 10, got undefined
+  FAIL: factorial via loop (assembler)
+    expected 120, got undefined
+42
+  FAIL: PRINT opcode
+    expected [42], got []
 
-10 passed, 0 failed
-PASS  tests/assembler.test.mjs
-FAIL  tests/vm.test.mjs
-      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'Op'
-
-1/2 test files passed.
+2 passed, 8 failed

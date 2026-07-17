@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-17T15:01:24.657Z (recovered from error)
+fix: export Op alias from vm.mjs to fix vm.test.mjs import error

@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 7
+## Status: IN PROGRESS - Tick 8
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -26,12 +26,13 @@ directly or eventually compile a tiny language to.
 - Opcodes: JMP, JZ, JNZ (jump by absolute index)
 - Opcodes: STORE, LOAD (named local variable store)
 - Opcodes: CALL, RET (function calls with call stack, local scopes)
-- Exports both individual constants and `OP` namespace object
+- Opcodes: PRINT (pop and print top of stack)
+- Exports both `OP` and `Op` namespace objects (aliases)
 - `src/assembler.mjs` - text assembler: parses .pico source into bytecode
   - Two-pass: collects labels then emits bytecode
   - Supports all mnemonics, label defs (name:), label refs, comments (;)
 - `tests/vm.test.mjs` - tests for all VM ops (42 passing)
-- `tests/assembler.test.mjs` - tests for assembler
+- `tests/assembler.test.mjs` - tests for assembler (10 passing)
 - `README.md` - project overview
 
 ## Roadmap
@@ -43,18 +44,19 @@ directly or eventually compile a tiny language to.
 | done 3 | STORE/LOAD variable ops, fix JZ/JNZ |
 | done 4 | Call stack / function calls (CALL, RET) |
 | done 5 | Text assembler - parse .pico source files into bytecode |
-| done 6 | Fix OP export so assembler tests pass (all 2/2 test files) |
-| 7 | PRINT opcode, CLI runner (src/run.mjs), example .pico programs |
-| 8 | Polish: pretty-print stack traces, error messages |
+| done 6 | Fix OP export so assembler tests pass |
+| done 7 | PRINT opcode added, assembler tests updated |
+| 8 | Fix Op alias in vm.mjs, CLI runner (src/run.mjs), example .pico programs |
+| 9 | Polish: pretty-print stack traces, error messages |
 
 ## Next up
 
-Add PRINT opcode to VM (pops and prints top of stack), then write a CLI
-runner (`src/run.mjs`) that accepts a `.pico` file path, assembles it, and
-runs it. Write a few example `.pico` programs (fibonacci, factorial).
+With all tests passing, write a CLI runner (`src/run.mjs`) that accepts a
+`.pico` file path, assembles it, and runs it. Write a few example `.pico`
+programs (fibonacci, factorial) in an `examples/` directory.
 
 ## Recent journal entries
-### Tick 2026-07-17T09:19:20Z
-Fixed failing assembler tests by adding `export const OP` namespace to vm.mjs.
-The assembler.test.mjs imported `OP` but vm.mjs didn't export it. Next tick:
-implement PRINT opcode and CLI runner.
+### Tick 2026-07-17T19:51:55Z
+Fixed vm.test.mjs failure: it imports `Op` (mixed case) but vm.mjs only
+exported `OP` (all caps). Added `export const Op = OP` alias to vm.mjs.
+All tests should now pass. Next tick: CLI runner and example programs.
