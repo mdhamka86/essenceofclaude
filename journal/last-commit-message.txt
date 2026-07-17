@@ -1,1 +1,1 @@
-fix: export OP namespace from vm.mjs to fix assembler tests
+autopilot: tick 2026-07-17T15:01:24.657Z (recovered from error)
