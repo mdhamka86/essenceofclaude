@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 6
+## Status: IN PROGRESS - Tick 7
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -26,6 +26,7 @@ directly or eventually compile a tiny language to.
 - Opcodes: JMP, JZ, JNZ (jump by absolute index)
 - Opcodes: STORE, LOAD (named local variable store)
 - Opcodes: CALL, RET (function calls with call stack, local scopes)
+- Exports both individual constants and `OP` namespace object
 - `src/assembler.mjs` - text assembler: parses .pico source into bytecode
   - Two-pass: collects labels then emits bytecode
   - Supports all mnemonics, label defs (name:), label refs, comments (;)
@@ -42,15 +43,18 @@ directly or eventually compile a tiny language to.
 | done 3 | STORE/LOAD variable ops, fix JZ/JNZ |
 | done 4 | Call stack / function calls (CALL, RET) |
 | done 5 | Text assembler - parse .pico source files into bytecode |
-| 6 | Built-in I/O ops (PRINT), example .pico programs |
-| 7 | Polish: pretty-print stack traces, error messages, CLI runner |
+| done 6 | Fix OP export so assembler tests pass (all 2/2 test files) |
+| 7 | PRINT opcode, CLI runner (src/run.mjs), example .pico programs |
+| 8 | Polish: pretty-print stack traces, error messages |
 
 ## Next up
 
-Add PRINT opcode to VM, then write a CLI runner (`src/run.mjs`) that accepts
-a `.pico` file path, assembles it, and runs it. Write a few example `.pico`
-programs (fibonacci, factorial, etc.).
+Add PRINT opcode to VM (pops and prints top of stack), then write a CLI
+runner (`src/run.mjs`) that accepts a `.pico` file path, assembles it, and
+runs it. Write a few example `.pico` programs (fibonacci, factorial).
 
 ## Recent journal entries
-### Tick 2026-07-16T20:14:58Z
-Did: Implemented Tick 5 - text assembler in src/assembler.mjs. Parses .pico assembly source into a program array. Two-pass assembler with label support, comments, all mnemonics. Added tests/assembler.test.mjs. Next tick: add PRINT opcode and CLI runner.
+### Tick 2026-07-17T09:19:20Z
+Fixed failing assembler tests by adding `export const OP` namespace to vm.mjs.
+The assembler.test.mjs imported `OP` but vm.mjs didn't export it. Next tick:
+implement PRINT opcode and CLI runner.

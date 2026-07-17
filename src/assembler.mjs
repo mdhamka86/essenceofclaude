@@ -1,147 +1,110 @@
-// Pico VM Text Assembler
-// Parses .pico assembly source text into a program array.
-//
-// Syntax:
-//   ; comment
-//   label:          ; define a label
-//   PUSH 42         ; instruction with operand
-//   JMP loop        ; jump to label
-//   HALT
-
+// Pico VM Assembler
+// Parses .pico text source into a program array for the VM
 import { OP } from './vm.mjs';
 
-// Mnemonics that take one operand in the source
-const ONE_OPERAND = new Set(['PUSH', 'JMP', 'JZ', 'JNZ', 'STORE', 'LOAD', 'CALL']);
+// Mnemonics that take one operand (string name)
+const STR_OPERAND = new Set(['STORE', 'LOAD']);
+// Mnemonics that take one numeric/label operand
+const NUM_OPERAND = new Set(['PUSH', 'JMP', 'JZ', 'JNZ', 'CALL']);
+// Mnemonics with no operand
+const NO_OPERAND = new Set([
+  'POP','DUP','SWAP','ADD','SUB','MUL','DIV','MOD','NEG','HALT',
+  'EQ','NEQ','LT','GT','LTE','GTE','AND','OR','NOT','RET','PRINT',
+]);
 
-// Map mnemonic -> opcode
-const MNEMONIC = {
-  PUSH: OP.PUSH,
-  POP: OP.POP,
-  DUP: OP.DUP,
-  SWAP: OP.SWAP,
-  ADD: OP.ADD,
-  SUB: OP.SUB,
-  MUL: OP.MUL,
-  DIV: OP.DIV,
-  MOD: OP.MOD,
-  NEG: OP.NEG,
-  HALT: OP.HALT,
-  EQ: OP.EQ,
-  NEQ: OP.NEQ,
-  LT: OP.LT,
-  GT: OP.GT,
-  LTE: OP.LTE,
-  GTE: OP.GTE,
-  AND: OP.AND,
-  OR: OP.OR,
-  NOT: OP.NOT,
-  JMP: OP.JMP,
-  JZ: OP.JZ,
-  JNZ: OP.JNZ,
-  STORE: OP.STORE,
-  LOAD: OP.LOAD,
-  CALL: OP.CALL,
-  RET: OP.RET,
-};
-
-/**
- * Assemble source text into a program array.
- * @param {string} source
- * @returns {Array}
- */
 export function assemble(source) {
-  // Tokenize: each entry is { type: 'label'|'instr', name, operand, lineNo }
-  const tokens = [];
   const lines = source.split('\n');
+  const tokens = []; // { type: 'label'|'instr'|'operand', value }
+  const labels = {}; // label -> program index
 
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-    // Strip comments
+  // Tokenize
+  for (let line of lines) {
+    // Remove comments
     const ci = line.indexOf(';');
     if (ci !== -1) line = line.slice(0, ci);
     line = line.trim();
     if (!line) continue;
 
-    // Check for label definition: word followed by colon
-    if (line.endsWith(':')) {
-      const name = line.slice(0, -1).trim();
-      if (!name) throw new Error('Empty label on line ' + (i + 1));
-      tokens.push({ type: 'label', name, lineNo: i + 1 });
-      continue;
+    // Could be: label: [instr [operand]]
+    // Split on whitespace
+    const parts = line.split(/\s+/);
+    let i = 0;
+
+    // Check for label definition
+    if (parts[i].endsWith(':')) {
+      tokens.push({ type: 'label', value: parts[i].slice(0, -1) });
+      i++;
     }
 
-    // Could be "LABEL: INSTR operand" on same line
-    const colonIdx = line.indexOf(':');
-    if (colonIdx !== -1) {
-      const beforeColon = line.slice(0, colonIdx).trim();
-      const afterColon = line.slice(colonIdx + 1).trim();
-      // beforeColon must be a single word (label)
-      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(beforeColon)) {
-        tokens.push({ type: 'label', name: beforeColon, lineNo: i + 1 });
-        if (afterColon) {
-          tokens.push(...parseInstr(afterColon, i + 1));
-        }
-        continue;
+    if (i < parts.length) {
+      const mnem = parts[i].toUpperCase();
+      tokens.push({ type: 'instr', value: mnem });
+      i++;
+      if (i < parts.length) {
+        tokens.push({ type: 'operand', value: parts[i] });
       }
     }
-
-    tokens.push(...parseInstr(line, i + 1));
   }
 
-  // Pass 1: calculate label addresses
-  // We simulate layout: each instr emits 1 slot for opcode, 1 for operand if present
-  const labels = {};
+  // Pass 1: calculate label positions
   let pos = 0;
   for (const tok of tokens) {
     if (tok.type === 'label') {
-      labels[tok.name] = pos;
-    } else {
-      // instr
-      pos += 1; // opcode slot
-      if (ONE_OPERAND.has(tok.name)) pos += 1; // operand slot
+      labels[tok.value] = pos;
+    } else if (tok.type === 'instr') {
+      const m = tok.value;
+      pos++; // opcode
+      if (NUM_OPERAND.has(m) || STR_OPERAND.has(m)) pos++; // operand
     }
+    // operand tokens counted via instr
   }
 
   // Pass 2: emit bytecode
   const program = [];
-  for (const tok of tokens) {
-    if (tok.type === 'label') continue;
-    const opcode = MNEMONIC[tok.name];
-    if (opcode === undefined) {
-      throw new Error('Unknown mnemonic: ' + tok.name + ' on line ' + tok.lineNo);
+  const patches = []; // { index, label } for label refs
+  let ti = 0;
+
+  while (ti < tokens.length) {
+    const tok = tokens[ti];
+    if (tok.type === 'label') { ti++; continue; }
+    if (tok.type === 'operand') { ti++; continue; } // should be consumed by instr
+
+    // instr
+    const mnem = tok.value;
+    ti++;
+
+    if (!(mnem in OP)) {
+      throw new Error(`Unknown mnemonic: ${mnem}`);
     }
-    program.push(opcode);
-    if (ONE_OPERAND.has(tok.name)) {
-      const operand = tok.operand;
-      if (operand === undefined) {
-        throw new Error(tok.name + ' requires an operand on line ' + tok.lineNo);
+    program.push(OP[mnem]);
+
+    if (NUM_OPERAND.has(mnem)) {
+      const opTok = tokens[ti];
+      if (!opTok || opTok.type !== 'operand') throw new Error(`${mnem} requires operand`);
+      ti++;
+      const raw = opTok.value;
+      const n = Number(raw);
+      if (!isNaN(n)) {
+        program.push(n);
+      } else {
+        // label reference - patch later
+        patches.push({ index: program.length, label: raw });
+        program.push(0); // placeholder
       }
-      program.push(resolveOperand(operand, labels, tok.name, tok.lineNo));
+    } else if (STR_OPERAND.has(mnem)) {
+      const opTok = tokens[ti];
+      if (!opTok || opTok.type !== 'operand') throw new Error(`${mnem} requires operand`);
+      ti++;
+      program.push(opTok.value);
     }
+    // NO_OPERAND: nothing more
+  }
+
+  // Apply patches
+  for (const { index, label } of patches) {
+    if (!(label in labels)) throw new Error(`Undefined label: ${label}`);
+    program[index] = labels[label];
   }
 
   return program;
-}
-
-function parseInstr(text, lineNo) {
-  const parts = text.split(/\s+/);
-  const name = parts[0].toUpperCase();
-  const operand = parts[1]; // may be undefined
-  return [{ type: 'instr', name, operand, lineNo }];
-}
-
-function resolveOperand(operand, labels, mnemonic, lineNo) {
-  // If it looks like a number, return it as-is
-  if (/^-?[0-9]+(\.[0-9]+)?$/.test(operand)) {
-    return Number(operand);
-  }
-  // STORE/LOAD take string variable names
-  if (mnemonic === 'STORE' || mnemonic === 'LOAD') {
-    return operand; // keep as string
-  }
-  // Otherwise treat as label reference
-  if (Object.prototype.hasOwnProperty.call(labels, operand)) {
-    return labels[operand];
-  }
-  throw new Error('Undefined label: ' + operand + ' on line ' + lineNo);
 }

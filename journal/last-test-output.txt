@@ -2,68 +2,21 @@
 > autopilot@0.1.0 test
 > node scripts/run-tests.mjs
 
-FAIL  tests/assembler.test.mjs
-      SyntaxError: The requested module './vm.mjs' does not provide an export named 'OP'
-PUSH
-  pass: PUSH 42 -> stack [42]
-  pass: PUSH 1,2,3
-POP
-  pass: POP removes top
-  pass: POP on empty throws
-DUP
-  pass: DUP duplicates top
-SWAP
-  pass: SWAP swaps top two
-  pass: SWAP on one element throws
-ADD
-  pass: 3+4=7
-  pass: -5+5=0
-SUB
-  pass: 10-3=7
-MUL
-  pass: 6*7=42
-DIV
-  pass: 15/3=5
-  pass: div by zero throws
-MOD
-  pass: 10%3=1
-  pass: mod by zero throws
-NEG
-  pass: NEG 5=-5
-  pass: NEG -3=3
-Comparison ops
-  pass: EQ equal
-  pass: EQ not equal
-  pass: NEQ different
-  pass: LT true
-  pass: LT false
-  pass: GT true
-  pass: LTE equal
-  pass: GTE equal
-Logical ops
-  pass: AND 1,1=1
-  pass: AND 1,0=0
-  pass: OR 0,0=0
-  pass: OR 0,1=1
-  pass: NOT 0=1
-  pass: NOT 5=0
-Jump ops
-  pass: JMP skips PUSH 0
-  pass: JZ taken when 0
-  pass: JZ not taken when nonzero
-  pass: JNZ taken when nonzero
-STORE/LOAD
-  pass: STORE and LOAD variable
-  pass: LOAD undefined var is undefined
-assemble helper
-  pass: assemble resolves labels
-CALL/RET
-  pass: simple function call
-  pass: nested function calls
-  pass: RET with empty call stack throws
-  pass: local vars isolated in function
+Assembler
+  pass: PUSH and HALT
+  pass: arithmetic
+  pass: comments stripped
+  pass: label definition and JMP
+  pass: JZ taken
+  pass: JZ not taken
+  pass: STORE and LOAD
+  pass: CALL and RET
+  pass: factorial via loop (assembler)
+  pass: PRINT opcode
 
-42 passed, 0 failed
-PASS  tests/vm.test.mjs
+10 passed, 0 failed
+PASS  tests/assembler.test.mjs
+FAIL  tests/vm.test.mjs
+      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'Op'
 
 1/2 test files passed.
