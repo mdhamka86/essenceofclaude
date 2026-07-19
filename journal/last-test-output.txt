@@ -5,22 +5,21 @@
 Assembler
   pass: PUSH and HALT
   FAIL: arithmetic
-    expected 7, got undefined
+    Cannot read properties of undefined (reading 'length')
   pass: comments stripped
   FAIL: label definition and JMP
-    expected 99, got undefined
+    Cannot read properties of undefined (reading 'length')
   FAIL: JZ taken
-    expected 2, got undefined
+    Cannot read properties of undefined (reading 'length')
   FAIL: JZ not taken
-    expected 1, got undefined
+    Cannot read properties of undefined (reading 'length')
   FAIL: STORE and LOAD
-    expected 10, got undefined
+    Cannot read properties of undefined (reading 'length')
   FAIL: CALL and RET
-    expected 10, got undefined
+    Cannot read properties of undefined (reading 'length')
   FAIL: factorial via loop (assembler)
-    expected 120, got undefined
-42
+    Cannot read properties of undefined (reading 'length')
   FAIL: PRINT opcode
-    expected [42], got []
+    Cannot read properties of undefined (reading 'length')
 
 2 passed, 8 failed

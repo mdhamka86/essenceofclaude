@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-18T21:36:51.405Z (recovered from error)
+fix: vm.run() returns stack top; PRINT tracks output array; fix assembler op dispatch
