@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-20T00:16:59.199Z (recovered from error)
+fix: rewrite assembler.mjs with complete opcode table to fix 'undefined length' errors

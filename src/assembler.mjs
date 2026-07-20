@@ -1,110 +1,122 @@
 // Pico VM Assembler
-// Parses .pico text source into a program array for the VM
+// Converts .pico source text into a bytecode array for the VM.
+//
+// Syntax:
+//   MNEMONIC [arg]   - instruction with optional argument
+//   label:           - label definition (standalone on a line)
+//   ; comment        - rest of line is a comment
+//
+// Example:
+//   PUSH 10
+//   PUSH 20
+//   ADD
+//   HALT
+
 import { OP } from './vm.mjs';
 
-// Mnemonics that take one operand (string name)
-const STR_OPERAND = new Set(['STORE', 'LOAD']);
-// Mnemonics that take one numeric/label operand
-const NUM_OPERAND = new Set(['PUSH', 'JMP', 'JZ', 'JNZ', 'CALL']);
-// Mnemonics with no operand
-const NO_OPERAND = new Set([
-  'POP','DUP','SWAP','ADD','SUB','MUL','DIV','MOD','NEG','HALT',
-  'EQ','NEQ','LT','GT','LTE','GTE','AND','OR','NOT','RET','PRINT',
-]);
+// Opcode table: mnemonic -> { op, args }
+// args is the number of inline arguments in the bytecode stream
+const OPCODES = {
+  PUSH:  { op: OP.PUSH,  args: 1 },  // arg: number literal
+  ADD:   { op: OP.ADD,   args: 0 },
+  SUB:   { op: OP.SUB,   args: 0 },
+  MUL:   { op: OP.MUL,   args: 0 },
+  DIV:   { op: OP.DIV,   args: 0 },
+  MOD:   { op: OP.MOD,   args: 0 },
+  NEG:   { op: OP.NEG,   args: 0 },
+  POP:   { op: OP.POP,   args: 0 },
+  DUP:   { op: OP.DUP,   args: 0 },
+  SWAP:  { op: OP.SWAP,  args: 0 },
+  HALT:  { op: OP.HALT,  args: 0 },
+  EQ:    { op: OP.EQ,    args: 0 },
+  NEQ:   { op: OP.NEQ,   args: 0 },
+  LT:    { op: OP.LT,    args: 0 },
+  GT:    { op: OP.GT,    args: 0 },
+  LTE:   { op: OP.LTE,   args: 0 },
+  GTE:   { op: OP.GTE,   args: 0 },
+  AND:   { op: OP.AND,   args: 0 },
+  OR:    { op: OP.OR,    args: 0 },
+  NOT:   { op: OP.NOT,   args: 0 },
+  JMP:   { op: OP.JMP,   args: 1, labelArg: true },
+  JZ:    { op: OP.JZ,    args: 1, labelArg: true },
+  JNZ:   { op: OP.JNZ,   args: 1, labelArg: true },
+  STORE: { op: OP.STORE, args: 1, nameArg: true },
+  LOAD:  { op: OP.LOAD,  args: 1, nameArg: true },
+  CALL:  { op: OP.CALL,  args: 1, labelArg: true },
+  RET:   { op: OP.RET,   args: 0 },
+  PRINT: { op: OP.PRINT, args: 0 },
+};
 
+/**
+ * Assemble a .pico source string into a bytecode array.
+ * @param {string} source
+ * @returns {Array} bytecode
+ */
 export function assemble(source) {
   const lines = source.split('\n');
-  const tokens = []; // { type: 'label'|'instr'|'operand', value }
-  const labels = {}; // label -> program index
 
-  // Tokenize
-  for (let line of lines) {
-    // Remove comments
-    const ci = line.indexOf(';');
-    if (ci !== -1) line = line.slice(0, ci);
-    line = line.trim();
+  // Tokenise: strip comments, split into tokens, tag label defs
+  const tokens = []; // array of { type: 'label'|'instr', ... }
+  for (let raw of lines) {
+    // Strip comment
+    const semi = raw.indexOf(';');
+    if (semi !== -1) raw = raw.slice(0, semi);
+    const line = raw.trim();
     if (!line) continue;
 
-    // Could be: label: [instr [operand]]
-    // Split on whitespace
+    // Label definition: ends with ':'
+    if (line.endsWith(':')) {
+      const name = line.slice(0, -1).trim();
+      tokens.push({ type: 'label', name });
+      continue;
+    }
+
+    // Instruction: first word is mnemonic, rest is arg
     const parts = line.split(/\s+/);
-    let i = 0;
-
-    // Check for label definition
-    if (parts[i].endsWith(':')) {
-      tokens.push({ type: 'label', value: parts[i].slice(0, -1) });
-      i++;
-    }
-
-    if (i < parts.length) {
-      const mnem = parts[i].toUpperCase();
-      tokens.push({ type: 'instr', value: mnem });
-      i++;
-      if (i < parts.length) {
-        tokens.push({ type: 'operand', value: parts[i] });
-      }
-    }
+    const mnemonic = parts[0].toUpperCase();
+    const arg = parts[1] !== undefined ? parts[1] : null;
+    tokens.push({ type: 'instr', mnemonic, arg });
   }
 
-  // Pass 1: calculate label positions
+  // First pass: calculate bytecode positions of each token
+  // and build label -> position map
+  // We simulate the bytecode size without emitting
+  const labels = {};
   let pos = 0;
   for (const tok of tokens) {
     if (tok.type === 'label') {
-      labels[tok.value] = pos;
-    } else if (tok.type === 'instr') {
-      const m = tok.value;
-      pos++; // opcode
-      if (NUM_OPERAND.has(m) || STR_OPERAND.has(m)) pos++; // operand
+      labels[tok.name] = pos;
+    } else {
+      // type === 'instr'
+      const def = OPCODES[tok.mnemonic];
+      if (!def) throw new Error('Unknown mnemonic: ' + tok.mnemonic);
+      pos += 1 + def.args; // opcode byte + argument bytes
     }
-    // operand tokens counted via instr
   }
 
-  // Pass 2: emit bytecode
-  const program = [];
-  const patches = []; // { index, label } for label refs
-  let ti = 0;
-
-  while (ti < tokens.length) {
-    const tok = tokens[ti];
-    if (tok.type === 'label') { ti++; continue; }
-    if (tok.type === 'operand') { ti++; continue; } // should be consumed by instr
-
-    // instr
-    const mnem = tok.value;
-    ti++;
-
-    if (!(mnem in OP)) {
-      throw new Error(`Unknown mnemonic: ${mnem}`);
-    }
-    program.push(OP[mnem]);
-
-    if (NUM_OPERAND.has(mnem)) {
-      const opTok = tokens[ti];
-      if (!opTok || opTok.type !== 'operand') throw new Error(`${mnem} requires operand`);
-      ti++;
-      const raw = opTok.value;
-      const n = Number(raw);
-      if (!isNaN(n)) {
-        program.push(n);
+  // Second pass: emit bytecode
+  const bytecode = [];
+  for (const tok of tokens) {
+    if (tok.type === 'label') continue;
+    const def = OPCODES[tok.mnemonic];
+    bytecode.push(def.op);
+    if (def.args === 1) {
+      if (def.labelArg) {
+        // arg is a label name; resolve to position
+        const target = labels[tok.arg];
+        if (target === undefined) throw new Error('Undefined label: ' + tok.arg);
+        bytecode.push(target);
+      } else if (def.nameArg) {
+        // arg is a variable name string
+        bytecode.push(tok.arg);
       } else {
-        // label reference - patch later
-        patches.push({ index: program.length, label: raw });
-        program.push(0); // placeholder
+        // arg is a numeric literal
+        const n = Number(tok.arg);
+        if (isNaN(n)) throw new Error('Expected number argument for ' + tok.mnemonic + ', got: ' + tok.arg);
+        bytecode.push(n);
       }
-    } else if (STR_OPERAND.has(mnem)) {
-      const opTok = tokens[ti];
-      if (!opTok || opTok.type !== 'operand') throw new Error(`${mnem} requires operand`);
-      ti++;
-      program.push(opTok.value);
     }
-    // NO_OPERAND: nothing more
   }
 
-  // Apply patches
-  for (const { index, label } of patches) {
-    if (!(label in labels)) throw new Error(`Undefined label: ${label}`);
-    program[index] = labels[label];
-  }
-
-  return program;
+  return bytecode;
 }

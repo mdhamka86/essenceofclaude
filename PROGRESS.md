@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 9
+## Status: IN PROGRESS - Tick 10
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -33,6 +33,7 @@ directly or eventually compile a tiny language to.
 - `src/assembler.mjs` - text assembler: parses .pico source into bytecode
   - Two-pass: collects labels then emits bytecode
   - Supports all mnemonics, label defs (name:), label refs, comments (;)
+  - Fixed: complete opcode table (was missing ADD, SUB, etc.)
 - `tests/vm.test.mjs` - tests for all VM ops (42 passing)
 - `tests/assembler.test.mjs` - tests for assembler
 - `README.md` - project overview
@@ -49,8 +50,9 @@ directly or eventually compile a tiny language to.
 | done 6 | Fix OP export so assembler tests pass |
 | done 7 | PRINT opcode added, assembler tests updated |
 | done 8 | Fix vm.run() return value and PRINT output array |
-| 9 | CLI runner (src/run.mjs), example .pico programs |
-| 10 | Polish: pretty-print stack traces, error messages |
+| done 9 | Fix assembler opcode table (was missing ADD, SUB, etc.) |
+| 10 | CLI runner (src/run.mjs), example .pico programs |
+| 11 | Polish: pretty-print stack traces, error messages |
 
 ## Next up
 
@@ -59,8 +61,8 @@ accepts a `.pico` file path, assembles it, and runs it. Write a few example
 `.pico` programs (fibonacci, factorial) in an `examples/` directory.
 
 ## Recent journal entries
-### Tick 2026-07-19T07:17:58Z
-Fixed failing assembler tests and PRINT test:
-- vm.run() now returns top of stack (fixes `got undefined` errors)
-- this.output = [] in VM constructor; PRINT pushes to it
-Next tick: CLI runner and example programs.
+### Tick 2026-07-20T11:29Z
+Assembler tests failed with 'Cannot read properties of undefined (reading length)'.
+Root cause: assembler opcode table was missing entries for ADD, SUB, MUL, etc.
+Rewrote assembler.mjs with complete opcode table.
+Next tick: CLI runner and example programs once all tests pass.
