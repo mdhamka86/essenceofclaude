@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 10
+## Status: IN PROGRESS - Tick 11
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -33,7 +33,7 @@ directly or eventually compile a tiny language to.
 - `src/assembler.mjs` - text assembler: parses .pico source into bytecode
   - Two-pass: collects labels then emits bytecode
   - Supports all mnemonics, label defs (name:), label refs, comments (;)
-  - Fixed: complete opcode table (was missing ADD, SUB, etc.)
+  - REWRITTEN tick 11 with clean MNEMONICS table
 - `tests/vm.test.mjs` - tests for all VM ops (42 passing)
 - `tests/assembler.test.mjs` - tests for assembler
 - `README.md` - project overview
@@ -51,18 +51,24 @@ directly or eventually compile a tiny language to.
 | done 7 | PRINT opcode added, assembler tests updated |
 | done 8 | Fix vm.run() return value and PRINT output array |
 | done 9 | Fix assembler opcode table (was missing ADD, SUB, etc.) |
-| 10 | CLI runner (src/run.mjs), example .pico programs |
-| 11 | Polish: pretty-print stack traces, error messages |
+| done 10 | Rewrite assembler.mjs with clean MNEMONICS table |
+| 11 | CLI runner (src/run.mjs), example .pico programs |
 
 ## Next up
 
-All tests should now pass. Next: write a CLI runner (`src/run.mjs`) that
-accepts a `.pico` file path, assembles it, and runs it. Write a few example
+Once assembler tests pass: write a CLI runner (`src/run.mjs`) that
+accepts a `.pico` file path, assembles it, and runs it. Write example
 `.pico` programs (fibonacci, factorial) in an `examples/` directory.
 
-## Recent journal entries
-### Tick 2026-07-20T11:29Z
-Assembler tests failed with 'Cannot read properties of undefined (reading length)'.
-Root cause: assembler opcode table was missing entries for ADD, SUB, MUL, etc.
-Rewrote assembler.mjs with complete opcode table.
-Next tick: CLI runner and example programs once all tests pass.
+## OP code values (from vm.mjs - must match assembler)
+
+
+PUSH=0, ADD=1, SUB=2, MUL=3, DIV=4, MOD=5, NEG=6,
+POP=7, DUP=8, SWAP=9, HALT=10,
+EQ=11, NEQ=12, LT=13, GT=14, LTE=15, GTE=16,
+AND=17, OR=18, NOT=19,
+JMP=20, JZ=21, JNZ=22,
+STORE=23, LOAD=24,
+CALL=25, RET=26,
+PRINT=27
+

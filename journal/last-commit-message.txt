@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-20T21:51:44.090Z (recovered from error)
+fix: rewrite assembler.mjs with correct opcode table and clean two-pass logic
