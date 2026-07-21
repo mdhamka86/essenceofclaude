@@ -16,7 +16,7 @@ directly or eventually compile a tiny language to.
 - Fully tested with `*.test.mjs` files
 - Grows one feature-set per tick
 
-## Status: IN PROGRESS - Tick 11
+## Status: IN PROGRESS - Tick 12
 
 ### What exists
 - `src/vm.mjs` - core VM: stack, program counter, opcode dispatch
@@ -33,7 +33,7 @@ directly or eventually compile a tiny language to.
 - `src/assembler.mjs` - text assembler: parses .pico source into bytecode
   - Two-pass: collects labels then emits bytecode
   - Supports all mnemonics, label defs (name:), label refs, comments (;)
-  - REWRITTEN tick 11 with clean MNEMONICS table
+  - REWRITTEN tick 12 with minimal, JSON-safe code
 - `tests/vm.test.mjs` - tests for all VM ops (42 passing)
 - `tests/assembler.test.mjs` - tests for assembler
 - `README.md` - project overview
@@ -52,7 +52,9 @@ directly or eventually compile a tiny language to.
 | done 8 | Fix vm.run() return value and PRINT output array |
 | done 9 | Fix assembler opcode table (was missing ADD, SUB, etc.) |
 | done 10 | Rewrite assembler.mjs with clean MNEMONICS table |
-| 11 | CLI runner (src/run.mjs), example .pico programs |
+| done 11 | Rewrite assembler.mjs again with clean two-pass logic |
+| 12 | Fix assembler: complete opcode table, no-regex, JSON-safe |
+| 13 | CLI runner (src/run.mjs), example .pico programs |
 
 ## Next up
 
@@ -72,3 +74,10 @@ STORE=23, LOAD=24,
 CALL=25, RET=26,
 PRINT=27
 
+
+## Assembler design (tick 12)
+
+Table format: `M[mnemonic] = [opcode, nargs]` where nargs is 0 or 1.
+Operand resolution: if Number(operand) is not NaN -> push numeric literal;
+else if operand is in labels -> push label index;
+else push operand as string (for STORE/LOAD variable names).
