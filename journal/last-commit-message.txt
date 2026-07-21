@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-21T22:05:24.861Z (recovered from error)
+fix: rewrite assembler.mjs - complete opcode table, minimal code
