@@ -1,1 +1,1 @@
-fix: assembler uses raw opcode numbers, no import dependency
+autopilot: tick 2026-07-22T11:49:26.023Z (recovered from error)
