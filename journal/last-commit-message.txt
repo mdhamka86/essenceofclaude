@@ -1,1 +1,1 @@
-fix: assembler complete opcode table (tick 14)
+fix: assembler uses raw opcode numbers, no import dependency

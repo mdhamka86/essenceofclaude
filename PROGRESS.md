@@ -4,7 +4,7 @@
 
 Tiny stack-based VM in plain JavaScript (ESM, no deps).
 
-## Status: Tick 14 - fixing assembler (again)
+## Status: Tick 15 - fixing assembler (raw opcodes)
 
 ### Files
 - src/vm.mjs - core VM, 28 opcodes
@@ -23,4 +23,4 @@ JMP=20 JZ=21 JNZ=22 STORE=23 LOAD=24 CALL=25 RET=26 PRINT=27
 - examples/ directory
 
 ## CRITICAL
-Keep JSON responses SHORT. Error recovery commits overwrite fixes.
+Keep JSON responses SHORT. Table missing entries beyond PUSH/HALT.
