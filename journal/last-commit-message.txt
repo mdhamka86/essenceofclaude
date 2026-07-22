@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-22T03:32:34.655Z (recovered from error)
+fix: assembler complete opcode table (tick 14)

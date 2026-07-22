@@ -23,8 +23,8 @@ export function assemble(src) {
       continue;
     }
     const i = line.indexOf(' ');
-    const mn = (i<0?line:line.slice(0,i)).toUpperCase();
-    const arg = i<0?null:line.slice(i+1).trim();
+    const mn = (i<0 ? line : line.slice(0,i)).toUpperCase();
+    const arg = i<0 ? null : line.slice(i+1).trim();
     const d = T[mn];
     if (!d) throw new Error('Unknown: '+mn);
     ops.push([d,arg]);
