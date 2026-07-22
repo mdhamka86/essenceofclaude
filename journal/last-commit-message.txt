@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-22T16:21:20.432Z (recovered from error)
+fix: assembler inline table, no backslashes in source
