@@ -1,1 +1,1 @@
-fix: assembler inline table, no backslashes in source
+fix: assembler - ultra-minimal single-file, all opcodes inline
