@@ -4,7 +4,7 @@
 
 Tiny stack-based VM in plain JavaScript (ESM, no deps).
 
-## Status: Tick 15 - fixing assembler (raw opcodes)
+## Status: Tick 16 - fixing assembler again
 
 ### Files
 - src/vm.mjs - core VM, 28 opcodes
@@ -21,6 +21,3 @@ JMP=20 JZ=21 JNZ=22 STORE=23 LOAD=24 CALL=25 RET=26 PRINT=27
 - Fix assembler tests (CURRENT)
 - CLI runner src/run.mjs
 - examples/ directory
-
-## CRITICAL
-Keep JSON responses SHORT. Table missing entries beyond PUSH/HALT.
