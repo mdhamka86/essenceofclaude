@@ -1,1 +1,1 @@
-fix: assembler pos counts +1 for opcode itself, export VMError from vm
+autopilot: tick 2026-07-23T10:25:51.742Z (recovered from error)
