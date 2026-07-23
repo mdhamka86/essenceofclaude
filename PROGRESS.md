@@ -1,7 +1,7 @@
 # PROGRESS
 ## Project: Pico VM
 Tiny stack-based VM, plain JS ESM.
-## Status: Tick 22 - fixing assembler (array-based table)
+## Status: Tick 23 - fixing assembler
 ### Files
 - src/vm.mjs - 28 opcodes
 - src/assembler.mjs - two-pass assembler
