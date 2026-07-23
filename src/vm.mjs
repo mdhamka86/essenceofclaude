@@ -1,200 +1,166 @@
-// Pico VM - stack-based virtual machine
-// Opcodes are plain integers; use the OP object as named constants.
-
-export const OP = {
-  PUSH:  0,
-  ADD:   1,
-  SUB:   2,
-  MUL:   3,
-  DIV:   4,
-  MOD:   5,
-  NEG:   6,
-  POP:   7,
-  DUP:   8,
-  SWAP:  9,
-  HALT:  10,
-  EQ:    11,
-  NEQ:   12,
-  LT:    13,
-  GT:    14,
-  LTE:   15,
-  GTE:   16,
-  AND:   17,
-  OR:    18,
-  NOT:   19,
-  JMP:   20,
-  JZ:    21,
-  JNZ:   22,
-  STORE: 23,
-  LOAD:  24,
-  CALL:  25,
-  RET:   26,
-  PRINT: 27,
-};
-
-// Alias for convenience
-export const Op = OP;
+export class VMError extends Error {
+  constructor(msg) { super(msg); this.name = 'VMError'; }
+}
 
 export class VM {
-  constructor() {
+  constructor(memory = 256) {
     this.stack = [];
-    this.output = [];
+    this.mem = new Array(memory).fill(0);
     this.callStack = [];
-    this.vars = [{}]; // stack of variable scopes
+    this.output = [];
   }
 
-  push(v) { this.stack.push(v); }
-  pop()    { if (this.stack.length === 0) throw new Error('Stack underflow'); return this.stack.pop(); }
-  peek()   { if (this.stack.length === 0) throw new Error('Stack underflow'); return this.stack[this.stack.length - 1]; }
-
   run(program) {
-    let pc = 0;
-    while (pc < program.length) {
-      const op = program[pc++];
+    const s = this.stack;
+    const m = this.mem;
+    let ip = 0;
+    const maxSteps = 100000;
+    let steps = 0;
+
+    while (ip < program.length) {
+      if (++steps > maxSteps) throw new VMError('Execution limit exceeded');
+      const op = program[ip++];
       switch (op) {
-        case OP.PUSH: {
-          this.push(program[pc++]);
+        case 0: { // PUSH
+          s.push(program[ip++]);
           break;
         }
-        case OP.ADD: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a + b);
+        case 1: { // ADD
+          const b = s.pop(); const a = s.pop();
+          s.push(a + b);
           break;
         }
-        case OP.SUB: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a - b);
+        case 2: { // SUB
+          const b = s.pop(); const a = s.pop();
+          s.push(a - b);
           break;
         }
-        case OP.MUL: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a * b);
+        case 3: { // MUL
+          const b = s.pop(); const a = s.pop();
+          s.push(a * b);
           break;
         }
-        case OP.DIV: {
-          const b = this.pop(); const a = this.pop();
-          if (b === 0) throw new Error('Division by zero');
-          this.push(a / b);
+        case 4: { // DIV
+          const b = s.pop(); const a = s.pop();
+          if (b === 0) throw new VMError('Division by zero');
+          s.push(Math.trunc(a / b));
           break;
         }
-        case OP.MOD: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a % b);
+        case 5: { // MOD
+          const b = s.pop(); const a = s.pop();
+          if (b === 0) throw new VMError('Modulo by zero');
+          s.push(a % b);
           break;
         }
-        case OP.NEG: {
-          this.push(-this.pop());
+        case 6: { // NEG
+          s.push(-s.pop());
           break;
         }
-        case OP.POP: {
-          this.pop();
+        case 7: { // POP
+          s.pop();
           break;
         }
-        case OP.DUP: {
-          this.push(this.peek());
+        case 8: { // DUP
+          if (s.length === 0) throw new VMError('Stack underflow');
+          s.push(s[s.length - 1]);
           break;
         }
-        case OP.SWAP: {
-          const b = this.pop(); const a = this.pop();
-          this.push(b); this.push(a);
+        case 9: { // SWAP
+          if (s.length < 2) throw new VMError('Stack underflow');
+          const b = s.pop(); const a = s.pop();
+          s.push(b); s.push(a);
           break;
         }
-        case OP.HALT: {
-          return this.stack.length > 0 ? this.stack[this.stack.length - 1] : undefined;
+        case 10: { // HALT
+          return;
         }
-        case OP.EQ: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a === b ? 1 : 0);
+        case 11: { // EQ
+          const b = s.pop(); const a = s.pop();
+          s.push(a === b ? 1 : 0);
           break;
         }
-        case OP.NEQ: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a !== b ? 1 : 0);
+        case 12: { // NEQ
+          const b = s.pop(); const a = s.pop();
+          s.push(a !== b ? 1 : 0);
           break;
         }
-        case OP.LT: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a < b ? 1 : 0);
+        case 13: { // LT
+          const b = s.pop(); const a = s.pop();
+          s.push(a < b ? 1 : 0);
           break;
         }
-        case OP.GT: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a > b ? 1 : 0);
+        case 14: { // GT
+          const b = s.pop(); const a = s.pop();
+          s.push(a > b ? 1 : 0);
           break;
         }
-        case OP.LTE: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a <= b ? 1 : 0);
+        case 15: { // LTE
+          const b = s.pop(); const a = s.pop();
+          s.push(a <= b ? 1 : 0);
           break;
         }
-        case OP.GTE: {
-          const b = this.pop(); const a = this.pop();
-          this.push(a >= b ? 1 : 0);
+        case 16: { // GTE
+          const b = s.pop(); const a = s.pop();
+          s.push(a >= b ? 1 : 0);
           break;
         }
-        case OP.AND: {
-          const b = this.pop(); const a = this.pop();
-          this.push((a !== 0 && b !== 0) ? 1 : 0);
+        case 17: { // AND
+          const b = s.pop(); const a = s.pop();
+          s.push(a !== 0 && b !== 0 ? 1 : 0);
           break;
         }
-        case OP.OR: {
-          const b = this.pop(); const a = this.pop();
-          this.push((a !== 0 || b !== 0) ? 1 : 0);
+        case 18: { // OR
+          const b = s.pop(); const a = s.pop();
+          s.push(a !== 0 || b !== 0 ? 1 : 0);
           break;
         }
-        case OP.NOT: {
-          this.push(this.pop() === 0 ? 1 : 0);
+        case 19: { // NOT
+          s.push(s.pop() === 0 ? 1 : 0);
           break;
         }
-        case OP.JMP: {
-          pc = program[pc];
+        case 20: { // JMP
+          ip = program[ip];
           break;
         }
-        case OP.JZ: {
-          const target = program[pc++];
-          if (this.pop() === 0) pc = target;
+        case 21: { // JZ
+          const target = program[ip++];
+          if (s.pop() === 0) ip = target;
           break;
         }
-        case OP.JNZ: {
-          const target = program[pc++];
-          if (this.pop() !== 0) pc = target;
+        case 22: { // JNZ
+          const target = program[ip++];
+          if (s.pop() !== 0) ip = target;
           break;
         }
-        case OP.STORE: {
-          const name = program[pc++];
-          this.vars[this.vars.length - 1][name] = this.pop();
+        case 23: { // STORE
+          const addr = program[ip++];
+          m[addr] = s.pop();
           break;
         }
-        case OP.LOAD: {
-          const name = program[pc++];
-          const scope = this.vars[this.vars.length - 1];
-          if (!(name in scope)) throw new Error('Undefined variable: ' + name);
-          this.push(scope[name]);
+        case 24: { // LOAD
+          const addr = program[ip++];
+          s.push(m[addr]);
           break;
         }
-        case OP.CALL: {
-          const target = program[pc++];
-          this.callStack.push(pc);
-          this.vars.push({});
-          pc = target;
+        case 25: { // CALL
+          const dest = program[ip++];
+          this.callStack.push(ip);
+          ip = dest;
           break;
         }
-        case OP.RET: {
-          if (this.callStack.length === 0) throw new Error('RET with empty call stack');
-          pc = this.callStack.pop();
-          this.vars.pop();
+        case 26: { // RET
+          if (this.callStack.length === 0) throw new VMError('Call stack underflow');
+          ip = this.callStack.pop();
           break;
         }
-        case OP.PRINT: {
-          const v = this.pop();
-          this.output.push(v);
-          console.log(v);
+        case 27: { // PRINT
+          const val = s.pop();
+          this.output.push(val);
           break;
         }
         default:
-          throw new Error('Unknown opcode: ' + op);
+          throw new VMError('Unknown opcode: ' + op);
       }
     }
-    return this.stack.length > 0 ? this.stack[this.stack.length - 1] : undefined;
   }
 }

@@ -53,6 +53,6 @@ Assembler
   pass: PRINT opcode
 PASS  tests/assembler.test.mjs
 FAIL  tests/vm.test.mjs
-      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'VMError'
+      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'Op'
 
 1/2 test files passed.

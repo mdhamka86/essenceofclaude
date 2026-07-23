@@ -1,1 +1,1 @@
-fix: rewrite assembler and tests from scratch, minimal and correct
+fix: assembler pos counts +1 for opcode itself, export VMError from vm
