@@ -1,165 +1,84 @@
+// Pico VM - stack-based virtual machine
+
 export class VMError extends Error {
   constructor(msg) { super(msg); this.name = 'VMError'; }
 }
 
+export const Op = {
+  PUSH:  0,
+  ADD:   1,
+  SUB:   2,
+  MUL:   3,
+  DIV:   4,
+  MOD:   5,
+  EQ:    6,
+  LT:    7,
+  GT:    8,
+  NOT:   9,
+  HALT:  10,
+  POP:   11,
+  DUP:   12,
+  SWAP:  13,
+  JZ:    21,
+  LOAD:  20,
+  STORE: 22,
+  JMP:   23,
+  JNZ:   24,
+  CALL:  25,
+  RET:   26,
+  PRINT: 27,
+};
+
 export class VM {
-  constructor(memory = 256) {
+  constructor(bytecode, opts = {}) {
+    this.bc = bytecode;
     this.stack = [];
-    this.mem = new Array(memory).fill(0);
+    this.mem = {};
     this.callStack = [];
+    this.ip = 0;
     this.output = [];
+    this.log = opts.log || null;
+    this.maxSteps = opts.maxSteps || 100000;
   }
 
-  run(program) {
-    const s = this.stack;
-    const m = this.mem;
-    let ip = 0;
-    const maxSteps = 100000;
-    let steps = 0;
+  pop() {
+    if (this.stack.length === 0) throw new VMError('Stack underflow');
+    return this.stack.pop();
+  }
 
-    while (ip < program.length) {
-      if (++steps > maxSteps) throw new VMError('Execution limit exceeded');
-      const op = program[ip++];
+  push(v) { this.stack.push(v); }
+
+  run() {
+    let steps = 0;
+    while (true) {
+      if (steps++ > this.maxSteps) throw new VMError('Step limit exceeded');
+      const op = this.bc[this.ip];
+      if (op === undefined) throw new VMError('IP out of bounds: ' + this.ip);
+      this.ip++;
       switch (op) {
-        case 0: { // PUSH
-          s.push(program[ip++]);
-          break;
-        }
-        case 1: { // ADD
-          const b = s.pop(); const a = s.pop();
-          s.push(a + b);
-          break;
-        }
-        case 2: { // SUB
-          const b = s.pop(); const a = s.pop();
-          s.push(a - b);
-          break;
-        }
-        case 3: { // MUL
-          const b = s.pop(); const a = s.pop();
-          s.push(a * b);
-          break;
-        }
-        case 4: { // DIV
-          const b = s.pop(); const a = s.pop();
-          if (b === 0) throw new VMError('Division by zero');
-          s.push(Math.trunc(a / b));
-          break;
-        }
-        case 5: { // MOD
-          const b = s.pop(); const a = s.pop();
-          if (b === 0) throw new VMError('Modulo by zero');
-          s.push(a % b);
-          break;
-        }
-        case 6: { // NEG
-          s.push(-s.pop());
-          break;
-        }
-        case 7: { // POP
-          s.pop();
-          break;
-        }
-        case 8: { // DUP
-          if (s.length === 0) throw new VMError('Stack underflow');
-          s.push(s[s.length - 1]);
-          break;
-        }
-        case 9: { // SWAP
-          if (s.length < 2) throw new VMError('Stack underflow');
-          const b = s.pop(); const a = s.pop();
-          s.push(b); s.push(a);
-          break;
-        }
-        case 10: { // HALT
-          return;
-        }
-        case 11: { // EQ
-          const b = s.pop(); const a = s.pop();
-          s.push(a === b ? 1 : 0);
-          break;
-        }
-        case 12: { // NEQ
-          const b = s.pop(); const a = s.pop();
-          s.push(a !== b ? 1 : 0);
-          break;
-        }
-        case 13: { // LT
-          const b = s.pop(); const a = s.pop();
-          s.push(a < b ? 1 : 0);
-          break;
-        }
-        case 14: { // GT
-          const b = s.pop(); const a = s.pop();
-          s.push(a > b ? 1 : 0);
-          break;
-        }
-        case 15: { // LTE
-          const b = s.pop(); const a = s.pop();
-          s.push(a <= b ? 1 : 0);
-          break;
-        }
-        case 16: { // GTE
-          const b = s.pop(); const a = s.pop();
-          s.push(a >= b ? 1 : 0);
-          break;
-        }
-        case 17: { // AND
-          const b = s.pop(); const a = s.pop();
-          s.push(a !== 0 && b !== 0 ? 1 : 0);
-          break;
-        }
-        case 18: { // OR
-          const b = s.pop(); const a = s.pop();
-          s.push(a !== 0 || b !== 0 ? 1 : 0);
-          break;
-        }
-        case 19: { // NOT
-          s.push(s.pop() === 0 ? 1 : 0);
-          break;
-        }
-        case 20: { // JMP
-          ip = program[ip];
-          break;
-        }
-        case 21: { // JZ
-          const target = program[ip++];
-          if (s.pop() === 0) ip = target;
-          break;
-        }
-        case 22: { // JNZ
-          const target = program[ip++];
-          if (s.pop() !== 0) ip = target;
-          break;
-        }
-        case 23: { // STORE
-          const addr = program[ip++];
-          m[addr] = s.pop();
-          break;
-        }
-        case 24: { // LOAD
-          const addr = program[ip++];
-          s.push(m[addr]);
-          break;
-        }
-        case 25: { // CALL
-          const dest = program[ip++];
-          this.callStack.push(ip);
-          ip = dest;
-          break;
-        }
-        case 26: { // RET
-          if (this.callStack.length === 0) throw new VMError('Call stack underflow');
-          ip = this.callStack.pop();
-          break;
-        }
-        case 27: { // PRINT
-          const val = s.pop();
-          this.output.push(val);
-          break;
-        }
-        default:
-          throw new VMError('Unknown opcode: ' + op);
+        case Op.PUSH: this.push(this.bc[this.ip++]); break;
+        case Op.ADD:  this.push(this.pop() + this.pop()); break;
+        case Op.SUB:  { const b = this.pop(), a = this.pop(); this.push(a - b); break; }
+        case Op.MUL:  this.push(this.pop() * this.pop()); break;
+        case Op.DIV:  { const b = this.pop(), a = this.pop(); if (b === 0) throw new VMError('Division by zero'); this.push(Math.trunc(a / b)); break; }
+        case Op.MOD:  { const b = this.pop(), a = this.pop(); if (b === 0) throw new VMError('Division by zero'); this.push(a % b); break; }
+        case Op.EQ:   this.push(this.pop() === this.pop() ? 1 : 0); break;
+        case Op.LT:   { const b = this.pop(), a = this.pop(); this.push(a < b ? 1 : 0); break; }
+        case Op.GT:   { const b = this.pop(), a = this.pop(); this.push(a > b ? 1 : 0); break; }
+        case Op.NOT:  this.push(this.pop() === 0 ? 1 : 0); break;
+        case Op.HALT: return this.stack.length > 0 ? this.stack[this.stack.length - 1] : 0;
+        case Op.POP:  this.pop(); break;
+        case Op.DUP:  { const v = this.pop(); this.push(v); this.push(v); break; }
+        case Op.SWAP: { const b = this.pop(), a = this.pop(); this.push(b); this.push(a); break; }
+        case Op.LOAD: { const addr = this.bc[this.ip++]; this.push(this.mem[addr] || 0); break; }
+        case Op.STORE:{ const addr = this.bc[this.ip++]; this.mem[addr] = this.pop(); break; }
+        case Op.JMP:  this.ip = this.bc[this.ip]; break;
+        case Op.JZ:   { const target = this.bc[this.ip++]; if (this.pop() === 0) this.ip = target; break; }
+        case Op.JNZ:  { const target = this.bc[this.ip++]; if (this.pop() !== 0) this.ip = target; break; }
+        case Op.CALL: { const target = this.bc[this.ip++]; this.callStack.push(this.ip); this.ip = target; break; }
+        case Op.RET:  { const ret = this.callStack.pop(); if (ret === undefined) throw new VMError('RET with empty call stack'); this.ip = ret; break; }
+        case Op.PRINT:{ const v = this.pop(); this.output.push(v); if (this.log) this.log(v); break; }
+        default: throw new VMError('Unknown opcode: ' + op);
       }
     }
   }

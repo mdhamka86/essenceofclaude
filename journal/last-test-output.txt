@@ -6,7 +6,17 @@ Assembler
   pass: PUSH and HALT
   pass: arithmetic
   pass: comments stripped
-  pass: label definition and JMP
+  FAIL: label definition and JMP
+    Expected values to be strictly deep-equal:
++ actual - expected
+
+  [
+    0,
+    1,
++   23,
+-   20,
+    0
+  ]
   FAIL: JZ taken
     Expected values to be strictly deep-equal:
 + actual - expected
@@ -35,7 +45,21 @@ Assembler
     42,
     10
   ]
-  pass: STORE and LOAD
+  FAIL: STORE and LOAD
+    Expected values to be strictly deep-equal:
++ actual - expected
+
+  [
+    0,
+    7,
++   22,
+-   23,
+    0,
++   20,
+-   24,
+    0,
+    10
+  ]
   FAIL: CALL and RET
     Expected values to be strictly deep-equal:
 + actual - expected ... Lines skipped
@@ -53,6 +77,6 @@ Assembler
   pass: PRINT opcode
 PASS  tests/assembler.test.mjs
 FAIL  tests/vm.test.mjs
-      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'Op'
+      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'assemble'
 
 1/2 test files passed.

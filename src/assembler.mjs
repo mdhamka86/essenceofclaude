@@ -1,48 +1,60 @@
+// Two-pass assembler for Pico VM
+// Mnemonic -> [opcode, numArgs]
+const T = {
+  PUSH:  [0, 1],
+  ADD:   [1, 0],
+  SUB:   [2, 0],
+  MUL:   [3, 0],
+  DIV:   [4, 0],
+  MOD:   [5, 0],
+  EQ:    [6, 0],
+  LT:    [7, 0],
+  GT:    [8, 0],
+  NOT:   [9, 0],
+  HALT:  [10, 0],
+  POP:   [11, 0],
+  DUP:   [12, 0],
+  SWAP:  [13, 0],
+  LOAD:  [20, 1],
+  STORE: [22, 1],
+  JMP:   [23, 1],
+  JZ:    [21, 1],
+  JNZ:   [24, 1],
+  CALL:  [25, 1],
+  RET:   [26, 0],
+  PRINT: [27, 0],
+};
+
 export function assemble(src) {
-  const T = {};
-  T['PUSH']=[0,1]; T['ADD']=[1,0]; T['SUB']=[2,0]; T['MUL']=[3,0];
-  T['DIV']=[4,0]; T['MOD']=[5,0]; T['NEG']=[6,0]; T['POP']=[7,0];
-  T['DUP']=[8,0]; T['SWAP']=[9,0]; T['HALT']=[10,0]; T['EQ']=[11,0];
-  T['NEQ']=[12,0]; T['LT']=[13,0]; T['GT']=[14,0]; T['LTE']=[15,0];
-  T['GTE']=[16,0]; T['AND']=[17,0]; T['OR']=[18,0]; T['NOT']=[19,0];
-  T['JMP']=[20,1]; T['JZ']=[21,1]; T['JNZ']=[22,1]; T['STORE']=[23,1];
-  T['LOAD']=[24,1]; T['CALL']=[25,1]; T['RET']=[26,0]; T['PRINT']=[27,0];
+  const lines = src.split('\n').map(l => l.replace(/;.*$/, '').trim()).filter(l => l);
 
-  const NL = String.fromCharCode(10);
-  const lines = src.split(NL);
+  // Pass 1: compute label addresses
   const labels = {};
-  const ops = [];
   let pos = 0;
-
-  for (const raw of lines) {
-    const line = raw.split(';')[0].trim();
-    if (!line) continue;
+  for (const line of lines) {
     if (line.endsWith(':')) {
-      labels[line.slice(0, -1).trim()] = pos;
-      continue;
+      labels[line.slice(0, -1)] = pos;
+    } else {
+      const parts = line.split(/\s+/);
+      const mn = parts[0].toUpperCase();
+      const d = T[mn];
+      if (!d) throw new Error('Unknown opcode: ' + mn);
+      pos += 1 + d[1];
     }
-    const parts = line.split(' ').filter(function(x){ return x; });
-    const mn = parts[0].toUpperCase();
-    const arg = parts[1] || null;
-    const d = T[mn];
-    if (!d) throw new Error('Unknown opcode: ' + mn);
-    ops.push([d, arg]);
-    pos += 1 + d[1];
   }
 
+  // Pass 2: emit bytecode
   const bc = [];
-  for (const entry of ops) {
-    const d = entry[0];
-    const arg = entry[1];
+  for (const line of lines) {
+    if (line.endsWith(':')) continue;
+    const parts = line.split(/\s+/);
+    const mn = parts[0].toUpperCase();
+    const d = T[mn];
     bc.push(d[0]);
-    if (d[1]) {
-      const n = Number(arg);
-      if (isNaN(n)) {
-        if (labels[arg] === undefined) throw new Error('Unknown label: ' + arg);
-        bc.push(labels[arg]);
-      } else {
-        bc.push(n);
-      }
+    if (d[1] === 1) {
+      const raw = parts[1];
+      const val = (raw in labels) ? labels[raw] : Number(raw);
+      bc.push(val);
     }
   }
   return bc;
