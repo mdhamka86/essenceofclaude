@@ -4,22 +4,55 @@
 
 Assembler
   pass: PUSH and HALT
-  FAIL: arithmetic
-    Cannot read properties of undefined (reading 'length')
+  pass: arithmetic
   pass: comments stripped
-  FAIL: label definition and JMP
-    Cannot read properties of undefined (reading 'length')
+  pass: label definition and JMP
   FAIL: JZ taken
-    Cannot read properties of undefined (reading 'length')
-  FAIL: JZ not taken
-    Cannot read properties of undefined (reading 'length')
-  FAIL: STORE and LOAD
-    Cannot read properties of undefined (reading 'length')
-  FAIL: CALL and RET
-    Cannot read properties of undefined (reading 'length')
-  FAIL: factorial via loop (assembler)
-    Cannot read properties of undefined (reading 'length')
-  FAIL: PRINT opcode
-    Cannot read properties of undefined (reading 'length')
+    Expected values to be strictly deep-equal:
++ actual - expected
 
-2 passed, 8 failed
+  [
+    0,
+    0,
+    21,
++   6,
+-   7,
+    0,
+    99,
+    10
+  ]
+  FAIL: JZ not taken
+    Expected values to be strictly deep-equal:
++ actual - expected
+
+  [
+    0,
+    1,
+    21,
++   6,
+-   7,
+    0,
+    42,
+    10
+  ]
+  pass: STORE and LOAD
+  FAIL: CALL and RET
+    Expected values to be strictly deep-equal:
++ actual - expected ... Lines skipped
+
+  [
+    25,
++   3,
+-   4,
+    10,
+...
+    1,
+    26
+  ]
+  pass: factorial via loop (assembler)
+  pass: PRINT opcode
+PASS  tests/assembler.test.mjs
+FAIL  tests/vm.test.mjs
+      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'VMError'
+
+1/2 test files passed.

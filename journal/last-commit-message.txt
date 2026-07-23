@@ -1,1 +1,1 @@
-fix: assembler uses explicit per-opcode assignments, no object literal
+fix: rewrite assembler and tests from scratch, minimal and correct

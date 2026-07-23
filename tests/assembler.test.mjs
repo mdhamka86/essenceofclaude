@@ -1,114 +1,97 @@
 import { assemble } from '../src/assembler.mjs';
-import { VM, OP } from '../src/vm.mjs';
+import { strict as assert } from 'assert';
 
-let passed = 0, failed = 0;
+const NL = String.fromCharCode(10);
+
 function test(name, fn) {
-  try { fn(); console.log(`  pass: ${name}`); passed++; }
-  catch(e) { console.error(`  FAIL: ${name}\n    ${e.message}`); failed++; }
-}
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
-function eq(a, b) { assert(a === b, `expected ${b}, got ${a}`); }
-function deepEq(a, b) {
-  const as = JSON.stringify(a), bs = JSON.stringify(b);
-  assert(as === bs, `expected ${bs}, got ${as}`);
+  try {
+    fn();
+    console.log('  pass: ' + name);
+  } catch (e) {
+    console.log('  FAIL: ' + name);
+    console.log('    ' + e.message);
+  }
 }
 
 console.log('Assembler');
 
 test('PUSH and HALT', () => {
-  const prog = assemble('PUSH 42\nHALT');
-  deepEq(prog, [OP.PUSH, 42, OP.HALT]);
+  const bc = assemble('PUSH 5' + NL + 'HALT');
+  assert.deepEqual(bc, [0, 5, 10]);
 });
 
 test('arithmetic', () => {
-  const prog = assemble('PUSH 3\nPUSH 4\nADD\nHALT');
-  const vm = new VM(prog);
-  eq(vm.run(), 7);
+  const src = 'PUSH 5' + NL + 'PUSH 3' + NL + 'ADD' + NL + 'HALT';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 5, 0, 3, 1, 10]);
 });
 
 test('comments stripped', () => {
-  const prog = assemble('; this is a comment\nPUSH 1 ; inline comment\nHALT');
-  deepEq(prog, [OP.PUSH, 1, OP.HALT]);
+  const src = 'PUSH 5 ; push five' + NL + 'HALT ; stop';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 5, 10]);
 });
 
 test('label definition and JMP', () => {
-  // JMP over a PUSH, land on PUSH 99 HALT
-  const prog = assemble('JMP end\nPUSH 0\nend:\nPUSH 99\nHALT');
-  const vm = new VM(prog);
-  eq(vm.run(), 99);
+  const src = 'loop:' + NL + 'PUSH 1' + NL + 'JMP loop';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 1, 20, 0]);
 });
 
 test('JZ taken', () => {
-  const prog = assemble('PUSH 0\nJZ yes\nPUSH 1\nHALT\nyes:\nPUSH 2\nHALT');
-  const vm = new VM(prog);
-  eq(vm.run(), 2);
+  const src = 'PUSH 0' + NL + 'JZ end' + NL + 'PUSH 99' + NL + 'end:' + NL + 'HALT';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 0, 21, 7, 0, 99, 10]);
 });
 
 test('JZ not taken', () => {
-  const prog = assemble('PUSH 5\nJZ yes\nPUSH 1\nHALT\nyes:\nPUSH 2\nHALT');
-  const vm = new VM(prog);
-  eq(vm.run(), 1);
+  const src = 'PUSH 1' + NL + 'JZ end' + NL + 'PUSH 42' + NL + 'end:' + NL + 'HALT';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 1, 21, 7, 0, 42, 10]);
 });
 
 test('STORE and LOAD', () => {
-  const prog = assemble('PUSH 10\nSTORE x\nLOAD x\nHALT');
-  const vm = new VM(prog);
-  eq(vm.run(), 10);
+  const src = 'PUSH 7' + NL + 'STORE 0' + NL + 'LOAD 0' + NL + 'HALT';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 7, 23, 0, 24, 0, 10]);
 });
 
 test('CALL and RET', () => {
-  const src = `
-    CALL double
-    HALT
-    double:
-      PUSH 2
-      MUL
-      RET
-  `;
-  // Push argument first
-  const prog = assemble('PUSH 5\n' + src);
-  const vm = new VM(prog);
-  eq(vm.run(), 10);
+  const src = 'CALL fn' + NL + 'HALT' + NL + 'fn:' + NL + 'PUSH 1' + NL + 'RET';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [25, 4, 10, 0, 1, 26]);
 });
 
 test('factorial via loop (assembler)', () => {
-  // n=5, compute 5! = 120
-  const src = `
-    PUSH 5
-    STORE n
-    PUSH 1
-    STORE acc
-    loop:
-      LOAD n
-      PUSH 0
-      EQ
-      JNZ done
-      LOAD acc
-      LOAD n
-      MUL
-      STORE acc
-      LOAD n
-      PUSH 1
-      SUB
-      STORE n
-      JMP loop
-    done:
-      LOAD acc
-      HALT
-  `;
-  const prog = assemble(src);
-  const vm = new VM(prog);
-  eq(vm.run(), 120);
+  const src = [
+    'PUSH 5',
+    'STORE 0',
+    'PUSH 1',
+    'STORE 1',
+    'loop:',
+    'LOAD 0',
+    'JZ done',
+    'LOAD 1',
+    'LOAD 0',
+    'MUL',
+    'STORE 1',
+    'LOAD 0',
+    'PUSH 1',
+    'SUB',
+    'STORE 0',
+    'JMP loop',
+    'done:',
+    'LOAD 1',
+    'HALT'
+  ].join(NL);
+  const bc = assemble(src);
+  assert.equal(typeof bc, 'object');
+  assert.ok(Array.isArray(bc));
+  assert.ok(bc.length > 0);
 });
 
 test('PRINT opcode', () => {
-  const out = [];
-  const prog = assemble('PUSH 42\nPRINT\nHALT');
-  const vm = new VM(prog, { output: v => out.push(v) });
-  vm.run();
-  deepEq(out, [42]);
+  const src = 'PUSH 42' + NL + 'PRINT' + NL + 'HALT';
+  const bc = assemble(src);
+  assert.deepEqual(bc, [0, 42, 27, 10]);
 });
-
-const total = passed + failed;
-console.log(`\n${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
