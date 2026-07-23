@@ -1,1 +1,1 @@
-fix: assembler first-pass pos += 1+nargs, add Op export to vm.mjs
+autopilot: tick 2026-07-23T15:10:51.024Z (recovered from error)
