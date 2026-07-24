@@ -1,1 +1,1 @@
-fix: correct assembler first-pass 0-arg counting, fix vm run() to return stack
+fix: assembler 0-arg pos count and vm run() returns stack

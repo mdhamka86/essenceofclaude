@@ -1,52 +1,44 @@
 import {assemble as _assemble} from './assembler.mjs';
 export {_assemble as assemble};
-export class VMError extends Error{}
-export const Op={PUSH:0,ADD:1,SUB:2,MUL:3,DIV:4,MOD:5,DUP:6,POP:7,SWAP:8,NEG:9,HALT:10,EQ:11,LT:12,GT:13,NEQ:14,LTE:15,GTE:16,AND:17,OR:18,NOT:19,JMP:20,JZ:21,JNZ:22,STORE:23,LOAD:24,CALL:25,RET:26,PRINT:27};
-export class VM{
-  constructor(){this.stack=[];this.mem={};this.calls=[];this.pc=0;}
-  push(v){this.stack.push(v);}
-  pop(){if(!this.stack.length)throw new VMError('Stack underflow');return this.stack.pop();}
-  peek(){if(!this.stack.length)throw new VMError('Stack underflow');return this.stack[this.stack.length-1];}
-  run(code){
-    this.pc=0;
-    while(this.pc<code.length){
-      const op=code[this.pc++];
-      switch(op){
-        case Op.PUSH:this.push(code[this.pc++]);break;
-        case Op.ADD:{const b=this.pop(),a=this.pop();this.push(a+b);}break;
-        case Op.SUB:{const b=this.pop(),a=this.pop();this.push(a-b);}break;
-        case Op.MUL:{const b=this.pop(),a=this.pop();this.push(a*b);}break;
-        case Op.DIV:{const b=this.pop(),a=this.pop();if(!b)throw new VMError('Division by zero');this.push(Math.trunc(a/b));}break;
-        case Op.MOD:{const b=this.pop(),a=this.pop();if(!b)throw new VMError('Division by zero');this.push(a%b);}break;
-        case Op.DUP:this.push(this.peek());break;
-        case Op.POP:this.pop();break;
-        case Op.SWAP:{const b=this.pop(),a=this.pop();this.push(b);this.push(a);}break;
-        case Op.NEG:this.push(-this.pop());break;
-        case Op.HALT:return this.stack;
-        case Op.EQ:{const b=this.pop(),a=this.pop();this.push(a===b?1:0);}break;
-        case Op.LT:{const b=this.pop(),a=this.pop();this.push(a<b?1:0);}break;
-        case Op.GT:{const b=this.pop(),a=this.pop();this.push(a>b?1:0);}break;
-        case Op.NEQ:{const b=this.pop(),a=this.pop();this.push(a!==b?1:0);}break;
-        case Op.LTE:{const b=this.pop(),a=this.pop();this.push(a<=b?1:0);}break;
-        case Op.GTE:{const b=this.pop(),a=this.pop();this.push(a>=b?1:0);}break;
-        case Op.AND:{const b=this.pop(),a=this.pop();this.push(a&&b?1:0);}break;
-        case Op.OR:{const b=this.pop(),a=this.pop();this.push(a||b?1:0);}break;
-        case Op.NOT:this.push(this.pop()?0:1);break;
-        case Op.JMP:this.pc=code[this.pc];break;
-        case Op.JZ:{const t=code[this.pc++];if(!this.pop())this.pc=t;}break;
-        case Op.JNZ:{const t=code[this.pc++];if(this.pop())this.pc=t;}break;
-        case Op.STORE:{const k=code[this.pc++];this.mem[k]=this.pop();}break;
-        case Op.LOAD:{const k=code[this.pc++];const v=this.mem[k];this.push(v===undefined?null:v);}break;
-        case Op.CALL:{const t=code[this.pc++];this.calls.push(this.pc);this.pc=t;}break;
-        case Op.RET:{if(!this.calls.length)throw new VMError('Empty call stack');this.pc=this.calls.pop();}break;
-        case Op.PRINT:console.log(this.pop());break;
-        default:throw new VMError('Unknown opcode: '+op);
-      }
-    }
-    return this.stack;
-  }
-}
 export function run(code){
-  const vm=new VM();
-  return vm.run(code);
+  const stack=[];
+  const mem={};
+  const calls=[];
+  let pc=0;
+  const pop=()=>{if(!stack.length)throw new Error('Stack underflow');return stack.pop();};
+  while(pc<code.length){
+    const op=code[pc++];
+    switch(op){
+      case 0:{stack.push(code[pc++]);break;}
+      case 1:{const b=pop(),a=pop();stack.push(a+b);break;}
+      case 2:{const b=pop(),a=pop();stack.push(a-b);break;}
+      case 3:{const b=pop(),a=pop();stack.push(a*b);break;}
+      case 4:{const b=pop(),a=pop();if(b===0)throw new Error('Division by zero');stack.push(Math.trunc(a/b));break;}
+      case 5:{const b=pop(),a=pop();if(b===0)throw new Error('Division by zero');stack.push(a%b);break;}
+      case 6:{const v=pop();stack.push(v);stack.push(v);break;}
+      case 7:{pop();break;}
+      case 8:{const b=pop(),a=pop();stack.push(b);stack.push(a);break;}
+      case 9:{stack.push(-pop());break;}
+      case 10:{return stack;}
+      case 11:{const b=pop(),a=pop();stack.push(a===b?1:0);break;}
+      case 12:{const b=pop(),a=pop();stack.push(a<b?1:0);break;}
+      case 13:{const b=pop(),a=pop();stack.push(a>b?1:0);break;}
+      case 14:{const b=pop(),a=pop();stack.push(a!==b?1:0);break;}
+      case 15:{const b=pop(),a=pop();stack.push(a<=b?1:0);break;}
+      case 16:{const b=pop(),a=pop();stack.push(a>=b?1:0);break;}
+      case 17:{const b=pop(),a=pop();stack.push((a&&b)?1:0);break;}
+      case 18:{const b=pop(),a=pop();stack.push((a||b)?1:0);break;}
+      case 19:{stack.push(pop()===0?1:0);break;}
+      case 20:{pc=code[pc];break;}
+      case 21:{const addr=code[pc++];if(pop()===0)pc=addr;break;}
+      case 22:{const addr=code[pc++];if(pop()!==0)pc=addr;break;}
+      case 23:{const k=code[pc++];mem[k]=pop();break;}
+      case 24:{const k=code[pc++];stack.push(mem[k]!==undefined?mem[k]:null);break;}
+      case 25:{calls.push(pc+1);pc=code[pc];break;}
+      case 26:{if(!calls.length)throw new Error('Empty call stack');pc=calls.pop();break;}
+      case 27:{console.log(pop());break;}
+      default:throw new Error('Unknown opcode: '+op);
+    }
+  }
+  return stack;
 }

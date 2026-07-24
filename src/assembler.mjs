@@ -1,4 +1,4 @@
-const OPS={PUSH:[0,1],ADD:[1,0],SUB:[2,0],MUL:[3,0],DIV:[4,0],MOD:[5,0],DUP:[6,0],POP:[7,0],SWAP:[8,0],NEG:[9,0],HALT:[10,0],EQ:[11,0],LT:[12,0],GT:[13,0],NEQ:[14,0],LTE:[15,0],GTE:[16,0],AND:[17,0],OR:[18,0],NOT:[19,0],JMP:[20,1],JZ:[21,1],JNZ:[22,1],STORE:[23,1],LOAD:[24,1],CALL:[25,1],RET:[26,0],PRINT:[27,0]};
+const OP={PUSH:[0,1],ADD:[1,0],SUB:[2,0],MUL:[3,0],DIV:[4,0],MOD:[5,0],DUP:[6,0],POP:[7,0],SWAP:[8,0],NEG:[9,0],HALT:[10,0],EQ:[11,0],LT:[12,0],GT:[13,0],NEQ:[14,0],LTE:[15,0],GTE:[16,0],AND:[17,0],OR:[18,0],NOT:[19,0],JMP:[20,1],JZ:[21,1],JNZ:[22,1],STORE:[23,1],LOAD:[24,1],CALL:[25,1],RET:[26,0],PRINT:[27,0]};
 export function assemble(src){
   const lines=src.split('\n').map(l=>l.replace(/;.*/,'')).map(l=>l.trim()).filter(Boolean);
   const labels={};
@@ -8,17 +8,15 @@ export function assemble(src){
       labels[line.slice(0,-1)]=pos;
     } else {
       const op=line.split(/\s+/)[0];
-      const info=OPS[op];
-      if(!info) throw new Error('Unknown opcode: '+op);
-      pos+=1+info[1];
+      if(!OP[op]) throw new Error('Unknown opcode: '+op);
+      pos+=1+OP[op][1];
     }
   }
   const out=[];
   for(const line of lines){
     if(line.endsWith(':')) continue;
     const parts=line.split(/\s+/);
-    const op=parts[0];
-    const [code,nargs]=OPS[op];
+    const [code,nargs]=OP[parts[0]];
     out.push(code);
     for(let i=0;i<nargs;i++){
       const a=parts[i+1];

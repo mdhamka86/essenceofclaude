@@ -1,7 +1,7 @@
 # PROGRESS
 ## Project: Pico VM
 Tiny stack-based VM, plain JS ESM.
-## Status: Tick 30 - fix assembler 0-arg pos count + vm run() returns stack
+## Status: Tick 31 - fix assembler 0-arg pos + vm run()
 ### Files
 - src/assembler.mjs - two-pass assembler
 - src/vm.mjs - VM + re-exports assemble
