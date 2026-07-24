@@ -98,7 +98,7 @@ Comparison ops
   FAIL: EQ not equal 
     undefined !== [0]
   FAIL: NEQ different 
-    Unknown opcode: undefined
+    undefined !== [1]
   FAIL: LT true 
     undefined !== [1]
   FAIL: LT false 
@@ -106,9 +106,9 @@ Comparison ops
   FAIL: GT true 
     undefined !== [1]
   FAIL: LTE equal 
-    Unknown opcode: undefined
+    undefined !== [1]
   FAIL: GTE equal 
-    Unknown opcode: undefined
+    undefined !== [1]
 Logical ops
   FAIL: AND 1,1=1 
     undefined !== [1]
@@ -138,7 +138,7 @@ STORE/LOAD
     undefined !== [null]
 assemble helper
   FAIL: assemble resolves labels 
-    src.split is not a function or its return value is not iterable
+    src.split is not a function
 CALL/RET
   FAIL: simple function call 
     undefined !== [20]
