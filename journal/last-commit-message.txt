@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-24T18:20:27.019Z (recovered from error)
+fix: correct assembler first-pass 0-arg counting, fix vm run() to return stack
