@@ -1,1 +1,1 @@
-fix: rewrite assembler and vm with correct opcodes and working run() returning stack
+autopilot: tick 2026-07-24T18:20:27.019Z (recovered from error)
