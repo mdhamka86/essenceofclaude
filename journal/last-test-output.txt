@@ -4,19 +4,7 @@
 
 Assembler
   pass: PUSH and HALT
-  FAIL: arithmetic
-    Expected values to be strictly deep-equal:
-+ actual - expected
-
-  [
-    0,
-    5,
-    0,
-    3,
-+   4,
--   1,
-    10
-  ]
+  pass: arithmetic
   pass: comments stripped
   pass: label definition and JMP
   FAIL: JZ taken
@@ -62,19 +50,102 @@ Assembler
     26
   ]
   pass: factorial via loop (assembler)
-  FAIL: PRINT opcode
-    Expected values to be strictly deep-equal:
-+ actual - expected
-
-  [
-    0,
-    42,
-+   17,
--   27,
-    10
-  ]
+  pass: PRINT opcode
 PASS  tests/assembler.test.mjs
-FAIL  tests/vm.test.mjs
-      SyntaxError: The requested module '../src/vm.mjs' does not provide an export named 'run'
+PUSH
+  FAIL: PUSH 42 -> stack [42] 
+    undefined !== [42]
+  FAIL: PUSH 1,2,3 
+    undefined !== [1,2,3]
+POP
+  FAIL: POP removes top 
+    undefined !== [1]
+  pass: POP on empty throws
+DUP
+  FAIL: DUP duplicates top 
+    undefined !== [7,7]
+SWAP
+  FAIL: SWAP swaps top two 
+    undefined !== [2,1]
+  pass: SWAP on one element throws
+ADD
+  FAIL: 3+4=7 
+    undefined !== [7]
+  FAIL: -5+5=0 
+    undefined !== [0]
+SUB
+  FAIL: 10-3=7 
+    undefined !== [7]
+MUL
+  FAIL: 6*7=42 
+    undefined !== [42]
+DIV
+  FAIL: 15/3=5 
+    undefined !== [5]
+  pass: div by zero throws
+MOD
+  FAIL: 10%3=1 
+    undefined !== [1]
+  pass: mod by zero throws
+NEG
+  FAIL: NEG 5=-5 
+    undefined !== [-5]
+  FAIL: NEG -3=3 
+    undefined !== [3]
+Comparison ops
+  FAIL: EQ equal 
+    undefined !== [1]
+  FAIL: EQ not equal 
+    undefined !== [0]
+  FAIL: NEQ different 
+    Unknown opcode: undefined
+  FAIL: LT true 
+    undefined !== [1]
+  FAIL: LT false 
+    undefined !== [0]
+  FAIL: GT true 
+    undefined !== [1]
+  FAIL: LTE equal 
+    Unknown opcode: undefined
+  FAIL: GTE equal 
+    Unknown opcode: undefined
+Logical ops
+  FAIL: AND 1,1=1 
+    undefined !== [1]
+  FAIL: AND 1,0=0 
+    undefined !== [0]
+  FAIL: OR 0,0=0 
+    undefined !== [0]
+  FAIL: OR 0,1=1 
+    undefined !== [1]
+  FAIL: NOT 0=1 
+    undefined !== [1]
+  FAIL: NOT 5=0 
+    undefined !== [0]
+Jump ops
+  FAIL: JMP skips PUSH 0 
+    undefined !== [1]
+  FAIL: JZ taken when 0 
+    undefined !== [42]
+  FAIL: JZ not taken when nonzero 
+    undefined !== [99]
+  FAIL: JNZ taken when nonzero 
+    undefined !== [55]
+STORE/LOAD
+  FAIL: STORE and LOAD variable 
+    undefined !== [99]
+  FAIL: LOAD undefined var is undefined 
+    undefined !== [null]
+assemble helper
+  FAIL: assemble resolves labels 
+    src.split is not a function or its return value is not iterable
+CALL/RET
+  FAIL: simple function call 
+    undefined !== [20]
+  FAIL: nested function calls 
+    undefined !== [7]
+  pass: RET with empty call stack throws
+  FAIL: local vars isolated in function 
+    undefined !== [99]
 
-1/2 test files passed.
+5 passed, 37 failed
