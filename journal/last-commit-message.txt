@@ -1,1 +1,1 @@
-fix: assembler opcode table (ADD=1,PRINT=27), fix 0-arg pos count, export run from vm
+autopilot: tick 2026-07-24T07:34:02.395Z (recovered from error)
