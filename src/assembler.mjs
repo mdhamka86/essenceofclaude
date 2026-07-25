@@ -6,9 +6,8 @@ const OPCODES={
   JMP:[20,1],JZ:[21,1],JNZ:[22,1],
   STORE:[23,1],LOAD:[24,1],CALL:[25,1],RET:[26,0],PRINT:[27,0]
 };
-
 export function assemble(src){
-  const lines=src.split('\n').map(l=>l.replace(/;.*/,'')).map(l=>l.trim()).filter(Boolean);
+  const lines=src.split('\n').map(l=>l.replace(/;.*/,'').trim()).filter(Boolean);
   const labels={};
   let pos=0;
   for(const line of lines){

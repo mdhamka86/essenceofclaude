@@ -1,10 +1,10 @@
 # PROGRESS
 ## Project: Pico VM
 Tiny stack-based VM, plain JS ESM.
-## Status: Tick 32 - fix Op export + assembler 0-arg pos
+## Status: Tick 33 - fix VMError export + assembler 0-arg pos
 ### Files
 - src/assembler.mjs - two-pass assembler
-- src/vm.mjs - VM + re-exports assemble + exports Op constants
+- src/vm.mjs - VM + re-exports assemble + exports Op, VMError
 - tests/vm.test.mjs - 42 tests
 - tests/assembler.test.mjs - 10 tests
 ## Roadmap

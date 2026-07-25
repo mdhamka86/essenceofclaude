@@ -1,1 +1,1 @@
-fix: export Op constants from vm.mjs, fix assembler 0-arg first-pass pos
+fix: export VMError from vm.mjs, fix assembler 0-arg first-pass
