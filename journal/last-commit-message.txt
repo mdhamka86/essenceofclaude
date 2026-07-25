@@ -1,1 +1,1 @@
-autopilot: tick 2026-07-25T07:20:16.801Z (recovered from error)
+fix: rewrite vm.mjs and assembler.mjs with correct implementations

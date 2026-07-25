@@ -138,7 +138,7 @@ STORE/LOAD
     undefined !== [null]
 assemble helper
   FAIL: assemble resolves labels 
-    src.split is not a function
+    assemble expects a string
 CALL/RET
   FAIL: simple function call 
     undefined !== [20]
