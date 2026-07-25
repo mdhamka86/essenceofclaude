@@ -10,33 +10,25 @@ const OPS = {
 
 export function assemble(src) {
   if (typeof src !== 'string') throw new Error('assemble expects a string');
-  const lines = src.split('\n')
-    .map(l => l.replace(/;.*$/, '').trim())
-    .filter(l => l.length > 0);
-
+  const lines = src.split('\n').map(l => l.replace(/;.*$/, '').trim()).filter(Boolean);
   const labels = {};
   let pos = 0;
   for (const line of lines) {
-    if (line.endsWith(':')) {
-      labels[line.slice(0, -1)] = pos;
-    } else {
-      const op = line.split(/\s+/)[0];
-      const info = OPS[op];
-      if (!info) throw new Error('Unknown opcode: ' + op);
-      pos += 1 + info[1];
-    }
+    if (line.endsWith(':')) { labels[line.slice(0, -1)] = pos; continue; }
+    const op = line.split(/\s+/)[0];
+    if (!OPS[op]) throw new Error('Unknown opcode: ' + op);
+    pos += 1 + OPS[op][1];
   }
-
-  const bytes = [];
+  const out = [];
   for (const line of lines) {
     if (line.endsWith(':')) continue;
     const parts = line.split(/\s+/);
-    const info = OPS[parts[0]];
-    bytes.push(info[0]);
-    if (info[1] === 1) {
-      const arg = parts[1];
-      bytes.push(labels[arg] !== undefined ? labels[arg] : Number(arg));
+    const [code, nargs] = OPS[parts[0]];
+    out.push(code);
+    if (nargs === 1) {
+      const a = parts[1];
+      out.push(labels[a] !== undefined ? labels[a] : Number(a));
     }
   }
-  return bytes;
+  return out;
 }

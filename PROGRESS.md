@@ -1,7 +1,7 @@
 # PROGRESS
 ## Project: Pico VM
 Tiny stack-based VM, plain JS ESM.
-## Status: Tick 35 - fix assembler first-pass and vm run()
+## Status: Tick 36 - fix assembler first-pass and vm run()
 ### Files
 - src/assembler.mjs - two-pass assembler
 - src/vm.mjs - VM + re-exports assemble + exports Op, VMError

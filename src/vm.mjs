@@ -1,5 +1,6 @@
-import { assemble as _assemble } from './assembler.mjs';
-export { _assemble as assemble };
+import { assemble as _asm } from './assembler.mjs';
+
+export const assemble = _asm;
 
 export class VMError extends Error {
   constructor(msg) { super(msg); this.name = 'VMError'; }
@@ -15,48 +16,46 @@ export const Op = {
   CALL:25,RET:26,PRINT:27
 };
 
-export function run(code) {
+export function run(code, opts) {
   const stack = [];
   const mem = {};
   const calls = [];
   let pc = 0;
-  const pop = () => {
-    if (stack.length === 0) throw new VMError('Stack underflow');
+  function pop() {
+    if (!stack.length) throw new VMError('Stack underflow');
     return stack.pop();
-  };
+  }
   while (pc < code.length) {
     const op = code[pc++];
-    switch (op) {
-      case Op.PUSH: stack.push(code[pc++]); break;
-      case Op.ADD: { const b=pop(),a=pop(); stack.push(a+b); break; }
-      case Op.SUB: { const b=pop(),a=pop(); stack.push(a-b); break; }
-      case Op.MUL: { const b=pop(),a=pop(); stack.push(a*b); break; }
-      case Op.DIV: { const b=pop(),a=pop(); if(b===0) throw new VMError('Division by zero'); stack.push(Math.trunc(a/b)); break; }
-      case Op.MOD: { const b=pop(),a=pop(); if(b===0) throw new VMError('Division by zero'); stack.push(a%b); break; }
-      case Op.DUP: { const a=pop(); stack.push(a,a); break; }
-      case Op.POP: pop(); break;
-      case Op.SWAP: { const b=pop(),a=pop(); stack.push(b,a); break; }
-      case Op.NEG: stack.push(-pop()); break;
-      case Op.HALT: return stack;
-      case Op.EQ: { const b=pop(),a=pop(); stack.push(a===b?1:0); break; }
-      case Op.LT: { const b=pop(),a=pop(); stack.push(a<b?1:0); break; }
-      case Op.GT: { const b=pop(),a=pop(); stack.push(a>b?1:0); break; }
-      case Op.NEQ: { const b=pop(),a=pop(); stack.push(a!==b?1:0); break; }
-      case Op.LTE: { const b=pop(),a=pop(); stack.push(a<=b?1:0); break; }
-      case Op.GTE: { const b=pop(),a=pop(); stack.push(a>=b?1:0); break; }
-      case Op.AND: { const b=pop(),a=pop(); stack.push((a&&b)?1:0); break; }
-      case Op.OR: { const b=pop(),a=pop(); stack.push((a||b)?1:0); break; }
-      case Op.NOT: stack.push(pop()?0:1); break;
-      case Op.JMP: pc=code[pc]; break;
-      case Op.JZ: { const t=code[pc++]; if(pop()===0) pc=t; break; }
-      case Op.JNZ: { const t=code[pc++]; if(pop()!==0) pc=t; break; }
-      case Op.STORE: { const k=code[pc++]; mem[k]=pop(); break; }
-      case Op.LOAD: { const k=code[pc++]; const v=mem[k]; stack.push(v===undefined?null:v); break; }
-      case Op.CALL: { const t=code[pc++]; calls.push(pc); pc=t; break; }
-      case Op.RET: { if(calls.length===0) throw new VMError('Empty call stack'); pc=calls.pop(); break; }
-      case Op.PRINT: console.log(pop()); break;
-      default: throw new VMError('Unknown opcode: '+op);
-    }
+    if (op === Op.PUSH)  { stack.push(code[pc++]); }
+    else if (op === Op.ADD)  { const b=pop(),a=pop(); stack.push(a+b); }
+    else if (op === Op.SUB)  { const b=pop(),a=pop(); stack.push(a-b); }
+    else if (op === Op.MUL)  { const b=pop(),a=pop(); stack.push(a*b); }
+    else if (op === Op.DIV)  { const b=pop(),a=pop(); if(!b) throw new VMError('Division by zero'); stack.push(Math.trunc(a/b)); }
+    else if (op === Op.MOD)  { const b=pop(),a=pop(); if(!b) throw new VMError('Division by zero'); stack.push(a%b); }
+    else if (op === Op.DUP)  { const a=pop(); stack.push(a,a); }
+    else if (op === Op.POP)  { pop(); }
+    else if (op === Op.SWAP) { const b=pop(),a=pop(); stack.push(b,a); }
+    else if (op === Op.NEG)  { stack.push(-pop()); }
+    else if (op === Op.HALT) { return stack; }
+    else if (op === Op.EQ)   { const b=pop(),a=pop(); stack.push(a===b?1:0); }
+    else if (op === Op.LT)   { const b=pop(),a=pop(); stack.push(a<b?1:0); }
+    else if (op === Op.GT)   { const b=pop(),a=pop(); stack.push(a>b?1:0); }
+    else if (op === Op.NEQ)  { const b=pop(),a=pop(); stack.push(a!==b?1:0); }
+    else if (op === Op.LTE)  { const b=pop(),a=pop(); stack.push(a<=b?1:0); }
+    else if (op === Op.GTE)  { const b=pop(),a=pop(); stack.push(a>=b?1:0); }
+    else if (op === Op.AND)  { const b=pop(),a=pop(); stack.push((a&&b)?1:0); }
+    else if (op === Op.OR)   { const b=pop(),a=pop(); stack.push((a||b)?1:0); }
+    else if (op === Op.NOT)  { stack.push(pop()?0:1); }
+    else if (op === Op.JMP)  { pc=code[pc]; }
+    else if (op === Op.JZ)   { const t=code[pc++]; if(!pop()) pc=t; }
+    else if (op === Op.JNZ)  { const t=code[pc++]; if(pop()) pc=t; }
+    else if (op === Op.STORE){ const k=code[pc++]; mem[k]=pop(); }
+    else if (op === Op.LOAD) { const k=code[pc++]; const v=mem[k]; stack.push(v===undefined?null:v); }
+    else if (op === Op.CALL) { const t=code[pc++]; calls.push(pc); pc=t; }
+    else if (op === Op.RET)  { if(!calls.length) throw new VMError('Empty call stack'); pc=calls.pop(); }
+    else if (op === Op.PRINT){ console.log(pop()); }
+    else throw new VMError('Unknown opcode: '+op);
   }
   return stack;
 }
