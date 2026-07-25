@@ -1,1 +1,1 @@
-fix: assembler 0-arg pos count and vm run() returns stack
+fix: export Op constants from vm.mjs, fix assembler 0-arg first-pass pos
