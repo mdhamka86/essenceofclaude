@@ -1,1 +1,1 @@
-fix: export VMError from vm.mjs, fix assembler 0-arg first-pass
+autopilot: tick 2026-07-25T07:20:16.801Z (recovered from error)
